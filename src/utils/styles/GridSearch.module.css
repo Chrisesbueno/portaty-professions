@@ -1,0 +1,88 @@
+/* General */
+.rightContainer,
+.leftContainer,
+.leftGridContainer,
+.rightGridContainer {
+  flex-direction: row;
+  flex-wrap: wrap;
+  justify-content: space-between;
+}
+.tinyRightColumn,
+.tinyLeftColumn,
+.column {
+  align-items: center;
+  justify-content: center;
+  height: 110px;
+  margin-bottom: 3px;
+  border-radius: 2px;
+  border: 0.5px solid #5e2129;
+}
+.bigRightColumn,
+.bigLeftColumn,
+.bigColumn {
+  align-items: center;
+  justify-content: center;
+  height: 223px;
+  width: 100%;
+  margin-bottom: 1%;
+  border-radius: 2px;
+  border: 0.5px solid #5e2129;
+}
+/* Big Right Grid */
+
+.rightContainer {
+  flex: 1;
+  margin-right: 3px;
+}
+.bigRightContainer {
+  flex: 2;
+}
+.tinyRightColumn {
+  width: 100%;
+}
+
+/* Big Left Grid */
+
+.leftContainer {
+  flex: 1;
+  margin-left: 3px;
+}
+.bigLeftContainer {
+  flex: 2;
+}
+.tinyLeftColumn {
+  width: 100%;
+}
+
+/* Left Grid */
+
+.leftGridContainer {
+  flex: 2;
+  margin-left: 3px;
+}
+.bigContainer {
+  flex: 1;
+}
+.column {
+  width: 49%;
+}
+
+/* Right Grid */
+
+.rightGridContainer {
+  flex: 2;
+  margin-right: 3px;
+}
+
+.bigColumn {
+  /* background-color: cornflowerblue; */
+}
+.bigLeftColumn,
+.bigRightColumn {
+  /* background-color: crimson; */
+}
+.tinyLeftColumn,
+.tinyRightColumn,
+.column {
+  /* background-color: coral; */
+}

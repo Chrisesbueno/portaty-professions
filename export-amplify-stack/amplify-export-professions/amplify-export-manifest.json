@@ -1,0 +1,116 @@
+{
+  "stackName": "amplify-professions-dev-202858",
+  "props": {
+    "templateFile": "root-stack-template.json",
+    "parameters": {
+      "AuthRoleName": "amplify-professions-dev-202858-authRole",
+      "UnauthRoleName": "amplify-professions-dev-202858-unauthRole",
+      "DeploymentBucketName": "amplify-professions-dev-202858-deployment"
+    },
+    "preserveLogicalIds": true,
+    "loadNestedStacks": {
+      "apiprofessionGraphql": {
+        "templateFile": "api\\professionGraphql\\cloudformation-template.json",
+        "parameters": {
+          "AppSyncApiName": "professionGraphql",
+          "DynamoDBBillingMode": "PAY_PER_REQUEST",
+          "DynamoDBEnableServerSideEncryption": false,
+          "S3DeploymentBucket": "amplify-professions-dev-202858-deployment",
+          "S3DeploymentRootKey": "amplify-appsync-files/3732c2ce9facd09b4d0a09fe476e9dadb03305bd",
+          "env": "dev"
+        },
+        "preserveLogicalIds": true,
+        "loadNestedStacks": {}
+      },
+      "authprofessions": {
+        "templateFile": "auth\\professions\\professions-cloudformation-template.json",
+        "parameters": {
+          "identityPoolName": "testAuthIdentityPool",
+          "allowUnauthenticatedIdentities": true,
+          "resourceNameTruncated": "profes1610a04c",
+          "userPoolName": "professions",
+          "autoVerifiedAttributes": [
+            "email"
+          ],
+          "mfaConfiguration": "OFF",
+          "mfaTypes": [
+            "SMS Text Message"
+          ],
+          "smsAuthenticationMessage": "Your authentication code is {####}",
+          "smsVerificationMessage": "Your verification code is {####}",
+          "emailVerificationSubject": "Verification code: {####}",
+          "emailVerificationMessage": "Verification code: {####}",
+          "defaultPasswordPolicy": false,
+          "passwordPolicyMinLength": 8,
+          "passwordPolicyCharacters": [],
+          "requiredAttributes": [
+            "email",
+            "name",
+            "birthdate"
+          ],
+          "aliasAttributes": [],
+          "userpoolClientGenerateSecret": false,
+          "userpoolClientRefreshTokenValidity": 30,
+          "userpoolClientWriteAttributes": [],
+          "userpoolClientReadAttributes": [],
+          "userpoolClientLambdaRole": "profes1610a04c_userpoolclient_lambda_role",
+          "userpoolClientSetAttributes": false,
+          "sharedId": "1610a04c",
+          "resourceName": "professions",
+          "authSelections": "identityPoolAndUserPool",
+          "serviceName": "Cognito",
+          "usernameAttributes": [
+            "email"
+          ],
+          "useDefault": "manual",
+          "userPoolGroups": false,
+          "userPoolGroupList": [],
+          "adminQueries": false,
+          "thirdPartyAuth": false,
+          "authProviders": [],
+          "usernameCaseSensitive": false,
+          "useEnabledMfas": true,
+          "breakCircularDependency": true,
+          "dependsOn": [],
+          "env": "dev"
+        },
+        "preserveLogicalIds": true,
+        "loadNestedStacks": {}
+      },
+      "storages3Professions": {
+        "templateFile": "storage\\s3Professions\\cloudformation-template.json",
+        "parameters": {
+          "bucketName": "s3professions",
+          "selectedGuestPermissions": [
+            "s3:GetObject",
+            "s3:ListBucket"
+          ],
+          "selectedAuthenticatedPermissions": [
+            "s3:PutObject",
+            "s3:GetObject",
+            "s3:ListBucket",
+            "s3:DeleteObject"
+          ],
+          "s3PrivatePolicy": "Private_policy_c4561c7e",
+          "s3ProtectedPolicy": "Protected_policy_c4561c7e",
+          "s3PublicPolicy": "Public_policy_c4561c7e",
+          "s3ReadPolicy": "read_policy_c4561c7e",
+          "s3UploadsPolicy": "Uploads_policy_c4561c7e",
+          "authPolicyName": "s3_amplify_c4561c7e",
+          "unauthPolicyName": "s3_amplify_c4561c7e",
+          "AuthenticatedAllowList": "ALLOW",
+          "GuestAllowList": "ALLOW",
+          "s3PermissionsAuthenticatedPrivate": "s3:PutObject,s3:GetObject,s3:DeleteObject",
+          "s3PermissionsAuthenticatedProtected": "s3:PutObject,s3:GetObject,s3:DeleteObject",
+          "s3PermissionsAuthenticatedPublic": "s3:PutObject,s3:GetObject,s3:DeleteObject",
+          "s3PermissionsAuthenticatedUploads": "s3:PutObject",
+          "s3PermissionsGuestPublic": "s3:GetObject",
+          "s3PermissionsGuestUploads": "DISALLOW",
+          "env": "dev"
+        },
+        "preserveLogicalIds": true,
+        "loadNestedStacks": {}
+      }
+    }
+  }
+}

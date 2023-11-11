@@ -1,0 +1,120 @@
+.scroll {
+  flex: 1;
+}
+.container {
+  flex: 1;
+  padding: 20px;
+}
+.content {
+
+}
+.panel {
+  margin-top: 10px;
+}
+.title {
+  font-family: "name";
+  margin: 10% 10px 0%;
+  text-align: center;
+  font-size: 42px;
+  color: #fb8500;
+}
+.name {
+  font-family: "name";
+  margin: 0 10px 10%;
+  text-align: center;
+  font-size: 42px;
+  color: #fb8500;
+}
+.inputContainer {
+  flex: 1;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+  background-color: #fafafa;
+  border: none;
+  padding: 11px 10px 11px 0px;
+  border-radius: 8px;
+  margin: 3px 0px 10px;
+}
+.labelInput {
+  font-family: "regular";
+  font-size: 14px;
+  color: #404040;
+}
+.textInput {
+  flex: 1;
+  font-family: "light";
+  margin-left: 10px;
+  color: #fb8500;
+}
+.errorInput {
+  font-family: "light";
+  color: red;
+  font-size: 12px;
+  position: relative;
+  top: -10px;
+}
+.errorInputMain {
+  font-family: "light";
+  color: red;
+  font-size: 14px;
+  position: relative;
+  top: -10px;
+}
+.placeholder {
+  flex: 1;
+  margin-left: 10px;
+  color: #8c9199cb;
+  font-size: 12px;
+  font-family: "light";
+}
+
+.login {
+  flex: 1;
+  text-align: center;
+  width: 100%;
+  padding: 20px;
+  height: 60px;
+  background-color: #fb8500;
+  border-radius: 16px;
+}
+
+.textLogin {
+  text-align: center;
+  font-family: "medium";
+  color: white;
+  font-size: 15px;
+}
+
+.signup {
+  flex-direction: row;
+  justify-content: center;
+}
+.dont {
+  font-family: "thin";
+  color: #c8c8c8;
+  font-size: 15px;
+}
+.signupBtn {
+  font-family: "regular";
+  margin-left: 5px;
+  color: #fb8500;
+  font-size: 15px;
+}
+.forgot {
+  text-align: center;
+  font-family: "regular";
+  color: #fb8500;
+  font-size: 15px;
+}
+.options {
+  flex-direction: row;
+  justify-content: flex-start;
+  padding: 5px 0 35px;
+}
+
+/* password */
+.security {
+  position: relative;
+  right: 27px;
+}

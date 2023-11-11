@@ -1,0 +1,25 @@
+.container {
+    flex: 1;
+  padding: 20px;
+  padding-top: 60px;
+  align-items: center;
+}
+.input {
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+  border-radius: 8px;
+  padding: 20px;
+  width: 160px;
+
+}
+.textInput {
+    font-size: 16;
+    font-family: 'medium';
+    margin-left: 10;
+}
+.qrContent {
+  padding: 20px;
+  align-items: center;
+  justify-content: center;
+}

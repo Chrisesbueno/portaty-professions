@@ -1,0 +1,75 @@
+.container {
+    flex: 1;
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    position: relative;
+    z-index: 1;
+  }
+  
+  .columnGrid,
+  .columnList {
+    /* align-items: center; */
+    position: relative;
+    z-index: 2;
+  }
+  .columnGrid {
+    height: 110px;
+  
+    width: 33%;
+    margin-bottom: 1%;
+    border-radius: 2px;
+  }
+  .columnList {
+    height: 60px;
+    padding-top: 10px;
+    width: 100%;
+    border-radius: 8px;
+    flex-direction: row;
+    margin-bottom: 10px;
+  }
+  .options {
+    position: absolute;
+    z-index: 3;
+    height: 30px;
+    width: 30px;
+    border-radius: 50px;
+    /* background-color: white; */
+    right: 0%;
+    margin-right: -5px;
+    margin-top: 5px;
+  }
+  .modal {
+    background-color: white;
+    height: 65px;
+    width: 80px;
+    position: relative;
+    z-index: 10;
+    right: 60px;
+    border-radius: 4px;
+    padding: 5px;
+    margin-top: 7px;
+  }
+  .text {
+      font-size: 13px;
+      font-family: 'lightItalic';
+      padding: 5px 0;
+  }
+  
+  .search {
+    /* flex: 1; */
+    margin-top: 20px;
+    text-align: center;
+    width: 250px;
+    padding: 20px;
+    height: 60px;
+    background-color: #ffa424;
+    border-radius: 16px;
+  }
+  
+  .textSearch {
+    text-align: center;
+    font-family: "medium";
+    color: white;
+    font-size: 15px;
+  }

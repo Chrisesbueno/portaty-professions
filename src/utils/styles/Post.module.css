@@ -1,0 +1,127 @@
+.line {
+    width: 150%;
+    height: 0.8px;
+    position: relative;
+    left: -10%;
+    /* margin-bottom: 20px; */
+  }
+  
+  .title {
+    font-family: "thinItalic";
+    font-size: 20px;
+    /* margin-bottom: 10px; */
+  }
+  .modalContainer {
+    flex: 1;
+    justify-content: center;
+    align-items: center;
+    background-color: rgba(52, 52, 52, 0.5);
+  }
+  .modalTop {
+    flex-direction: row;
+    align-items: center;
+    margin-bottom: 20px;
+  }
+  .modalText {
+    /* font-weight: 600; */
+    font-family: "regular";
+    font-size: 14px;
+    margin-left: 5px;
+  }
+  .modalContent {
+    background-color: white;
+    border-radius: 12px;
+    padding: 20px;
+    width: 300px;
+    height: 530px;
+  }
+  .modalTextSelect {
+    font-family: "light";
+    /* font-weight: 500; */
+    font-size: 14px;
+    color: #8c9199;
+    text-transform: capitalize;
+  }
+  .textInputTag {
+    flex: 1;
+    /* margin-left: 10px; */
+    color: #8c9199cb;
+    text-transform: capitalize;
+    font-size: 12px;
+    font-family: "light";
+  }
+  .inputContainerTag {
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+    background-color: #fafafa;
+    border: none;
+    /* width: 50%; */
+    padding: 20px 10px;
+    border-radius: 8px;
+    margin: 3px 0px 10px;
+  }
+  
+  .labelInputTag {
+    font-family: "regular";
+    font-size: 14px;
+    color: #404040;
+    text-transform: capitalize;
+  }
+  
+  .containerTag {
+    border: 0.5px solid rgb(209, 209, 209);
+    border-radius: 2px;
+    padding: 4px 10px;
+    margin: -6px 2px;
+  }
+  .textTag {
+    font-size: 12px;
+    font-family: 'thin';
+  }
+  
+  .textInput {
+    flex: 1;
+    font-family: "light";
+    margin-left: 10px;
+    color: #8c9199cb;
+    text-transform: capitalize;
+  }
+  .inputContainer {
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+    background-color: #fafafa;
+    border: none;
+    /* width: 50%; */
+    padding: 11px 10px 11px 0px;
+    border-radius: 8px;
+    margin: 3px 0px 10px;
+  }
+  .placeholder {
+    flex: 1;
+    margin-left: 10px;
+    color: #8c9199cb;
+    text-transform: capitalize;
+    font-size: 12px;
+    font-family: "light";
+  }
+  .labelInput {
+    font-family: "regular";
+    font-size: 14px;
+    color: #404040;
+    text-transform: capitalize;
+  }
+  .titleTag {
+    margin-top: -12px;
+    font-family: 'light';
+    margin-bottom: 12px;
+    font-size: 12px;
+  }
+  .line {
+    width: 300px;
+    height: 0.3px;
+    position: relative;
+    left: -7.7%;
+    bottom: 10%;
+  }

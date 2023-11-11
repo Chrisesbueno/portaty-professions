@@ -1,0 +1,1124 @@
+type Users @aws_cognito_user_pools @aws_iam {
+  id: ID
+  cognitoID: ID
+  name: String
+  lastName: String
+  email: String
+  identityID: ID
+  favorites(filter: ModelFavoritesFilterInput, sortDirection: ModelSortDirection, limit: Int, nextToken: String): ModelFavoritesConnection
+  business(filter: ModelBusinessFilterInput, sortDirection: ModelSortDirection, limit: Int, nextToken: String): ModelBusinessConnection
+  owner: String
+  createdAt: AWSDateTime!
+  updatedAt: AWSDateTime!
+}
+
+type Business @aws_api_key @aws_cognito_user_pools @aws_iam {
+  id: ID!
+  userID: ID
+  user: Users
+  name: String
+  image: String
+  email: String
+  phone: String
+  whatsapp: String
+  instagram: String
+  facebook: String
+  page: String
+  coordinates: Coordinates
+  activity: String
+  tags: [String]
+  favorites(userID: ModelIDKeyConditionInput, filter: ModelFavoritesFilterInput, sortDirection: ModelSortDirection, limit: Int, nextToken: String): ModelFavoritesConnection
+  createdAt: AWSDateTime!
+  updatedAt: AWSDateTime!
+  owner: String
+}
+
+type Tags {
+  id: ID!
+  name: String!
+  objects(filter: ModelActivityTagsFilterInput, sortDirection: ModelSortDirection, limit: Int, nextToken: String): ModelActivityTagsConnection
+  createdAt: AWSDateTime!
+  updatedAt: AWSDateTime!
+}
+
+type Activity {
+  id: ID!
+  name: String!
+  tags(filter: ModelActivityTagsFilterInput, sortDirection: ModelSortDirection, limit: Int, nextToken: String): ModelActivityTagsConnection
+  createdAt: AWSDateTime!
+  updatedAt: AWSDateTime!
+}
+
+type Favorites @aws_cognito_user_pools @aws_iam {
+  id: ID!
+  businessID: ID!
+  business: Business
+  userID: ID
+  user: Users
+  position: Int
+  owner: String
+  createdAt: AWSDateTime!
+  updatedAt: AWSDateTime!
+}
+
+type Complaints @aws_cognito_user_pools @aws_iam {
+  id: ID!
+  userID: ID!
+  businessID: ID!
+  description: String!
+  status: ComplaintStatus!
+  createdAt: AWSDateTime!
+  updatedAt: AWSDateTime!
+  owner: String
+}
+
+type Logs @aws_cognito_user_pools @aws_iam {
+  id: ID!
+  userID: ID!
+  type: TypeLogs
+  text: String
+  businessID: ID
+  posI: Int
+  posE: Int
+  name: String
+  createdAt: AWSDateTime!
+  updatedAt: AWSDateTime!
+}
+
+enum ComplaintStatus {
+  PENDING
+  IN_REVIEW
+  IN_PROGRESS
+  RESOLVED
+  REFUSED
+  CANCELLED
+}
+
+enum TypeLogs {
+  SEARCH
+  BUSINESS_VIEW
+  FAVORITE
+}
+
+type Testing @aws_cognito_user_pools @aws_iam {
+  id: ID!
+  name: [String!]!
+  coordinates: Coordinates!
+  createdAt: AWSDateTime!
+  updatedAt: AWSDateTime!
+}
+
+type Coordinates @aws_api_key @aws_cognito_user_pools @aws_iam {
+  lat: Float!
+  lon: Float!
+}
+
+type Query {
+  searchByDistance(location: LocationInput!, km: Int): TestingConnection
+  searchBusinessByDistance(location: LocationInput!, km: Float, text: String!): BusinessConnection
+  getTags(id: ID!): Tags
+  listTags(filter: ModelTagsFilterInput, limit: Int, nextToken: String): ModelTagsConnection
+  getActivity(id: ID!): Activity
+  listActivities(filter: ModelActivityFilterInput, limit: Int, nextToken: String): ModelActivityConnection
+  getActivityTags(id: ID!): ActivityTags
+  listActivityTags(filter: ModelActivityTagsFilterInput, limit: Int, nextToken: String): ModelActivityTagsConnection
+  activityTagsByTagsId(tagsId: ID!, sortDirection: ModelSortDirection, filter: ModelActivityTagsFilterInput, limit: Int, nextToken: String): ModelActivityTagsConnection
+  activityTagsByActivityId(activityId: ID!, sortDirection: ModelSortDirection, filter: ModelActivityTagsFilterInput, limit: Int, nextToken: String): ModelActivityTagsConnection
+  getUsers(id: ID!): Users @aws_iam @aws_cognito_user_pools
+  listUsers(filter: ModelUsersFilterInput, limit: Int, nextToken: String): ModelUsersConnection @aws_iam @aws_cognito_user_pools
+  userByEmail(email: String!, sortDirection: ModelSortDirection, filter: ModelUsersFilterInput, limit: Int, nextToken: String): ModelUsersConnection @aws_iam @aws_cognito_user_pools
+  getBusiness(id: ID!): Business @aws_api_key @aws_iam @aws_cognito_user_pools
+  listBusinesses(filter: ModelBusinessFilterInput, limit: Int, nextToken: String): ModelBusinessConnection @aws_api_key @aws_iam @aws_cognito_user_pools
+  businessesByUserID(userID: ID!, sortDirection: ModelSortDirection, filter: ModelBusinessFilterInput, limit: Int, nextToken: String): ModelBusinessConnection @aws_api_key @aws_iam @aws_cognito_user_pools
+  searchBusinesses(filter: SearchableBusinessFilterInput, sort: [SearchableBusinessSortInput], limit: Int, nextToken: String, from: Int, aggregates: [SearchableBusinessAggregationInput]): SearchableBusinessConnection @aws_api_key @aws_iam @aws_cognito_user_pools
+  getFavorites(id: ID!): Favorites @aws_iam @aws_cognito_user_pools
+  listFavorites(filter: ModelFavoritesFilterInput, limit: Int, nextToken: String): ModelFavoritesConnection @aws_iam @aws_cognito_user_pools
+  favoritesByBusinessID(businessID: ID!, userID: ModelIDKeyConditionInput, sortDirection: ModelSortDirection, filter: ModelFavoritesFilterInput, limit: Int, nextToken: String): ModelFavoritesConnection @aws_iam @aws_cognito_user_pools
+  favoritesByUserID(userID: ID!, sortDirection: ModelSortDirection, filter: ModelFavoritesFilterInput, limit: Int, nextToken: String): ModelFavoritesConnection @aws_iam @aws_cognito_user_pools
+  getComplaints(id: ID!): Complaints @aws_cognito_user_pools @aws_iam
+  listComplaints(filter: ModelComplaintsFilterInput, limit: Int, nextToken: String): ModelComplaintsConnection @aws_cognito_user_pools @aws_iam
+  getLogs(id: ID!): Logs @aws_cognito_user_pools @aws_iam
+  listLogs(filter: ModelLogsFilterInput, limit: Int, nextToken: String): ModelLogsConnection @aws_cognito_user_pools @aws_iam
+  getTesting(id: ID!): Testing @aws_cognito_user_pools @aws_iam
+  listTestings(filter: ModelTestingFilterInput, limit: Int, nextToken: String): ModelTestingConnection @aws_cognito_user_pools @aws_iam
+  searchTestings(filter: SearchableTestingFilterInput, sort: [SearchableTestingSortInput], limit: Int, nextToken: String, from: Int, aggregates: [SearchableTestingAggregationInput]): SearchableTestingConnection @aws_cognito_user_pools @aws_iam
+}
+
+input LocationInput {
+  lat: Float!
+  lon: Float!
+}
+
+type TestingConnection {
+  items: [Testing]
+  total: Int
+  nextToken: String
+}
+
+type BusinessConnection {
+  items: [Business]
+  total: Int
+  nextToken: String
+}
+
+type SearchableBusinessConnection @aws_api_key @aws_iam @aws_cognito_user_pools {
+  items: [Business]!
+  nextToken: String
+  total: Int
+  aggregateItems: [SearchableAggregateResult]!
+}
+
+type SearchableAggregateResult @aws_api_key @aws_cognito_user_pools @aws_iam {
+  name: String!
+  result: SearchableAggregateGenericResult
+}
+
+type SearchableAggregateScalarResult @aws_api_key @aws_cognito_user_pools @aws_iam {
+  value: Float!
+}
+
+type SearchableAggregateBucketResult @aws_api_key @aws_cognito_user_pools @aws_iam {
+  buckets: [SearchableAggregateBucketResultItem]
+}
+
+type SearchableAggregateBucketResultItem @aws_api_key @aws_cognito_user_pools @aws_iam {
+  key: String!
+  doc_count: Int!
+}
+
+union SearchableAggregateGenericResult = SearchableAggregateScalarResult | SearchableAggregateBucketResult
+
+type SearchableTestingConnection @aws_cognito_user_pools @aws_iam {
+  items: [Testing]!
+  nextToken: String
+  total: Int
+  aggregateItems: [SearchableAggregateResult]!
+}
+
+type ActivityTags {
+  id: ID!
+  tagsId: ID!
+  activityId: ID!
+  tags: Tags!
+  activity: Activity!
+  createdAt: AWSDateTime!
+  updatedAt: AWSDateTime!
+}
+
+input ModelStringInput {
+  ne: String
+  eq: String
+  le: String
+  lt: String
+  ge: String
+  gt: String
+  contains: String
+  notContains: String
+  between: [String]
+  beginsWith: String
+  attributeExists: Boolean
+  attributeType: ModelAttributeTypes
+  size: ModelSizeInput
+}
+
+input ModelIntInput {
+  ne: Int
+  eq: Int
+  le: Int
+  lt: Int
+  ge: Int
+  gt: Int
+  between: [Int]
+  attributeExists: Boolean
+  attributeType: ModelAttributeTypes
+}
+
+input ModelFloatInput {
+  ne: Float
+  eq: Float
+  le: Float
+  lt: Float
+  ge: Float
+  gt: Float
+  between: [Float]
+  attributeExists: Boolean
+  attributeType: ModelAttributeTypes
+}
+
+input ModelBooleanInput {
+  ne: Boolean
+  eq: Boolean
+  attributeExists: Boolean
+  attributeType: ModelAttributeTypes
+}
+
+input ModelIDInput {
+  ne: ID
+  eq: ID
+  le: ID
+  lt: ID
+  ge: ID
+  gt: ID
+  contains: ID
+  notContains: ID
+  between: [ID]
+  beginsWith: ID
+  attributeExists: Boolean
+  attributeType: ModelAttributeTypes
+  size: ModelSizeInput
+}
+
+input ModelSubscriptionStringInput {
+  ne: String
+  eq: String
+  le: String
+  lt: String
+  ge: String
+  gt: String
+  contains: String
+  notContains: String
+  between: [String]
+  beginsWith: String
+  in: [String]
+  notIn: [String]
+}
+
+input ModelSubscriptionIntInput {
+  ne: Int
+  eq: Int
+  le: Int
+  lt: Int
+  ge: Int
+  gt: Int
+  between: [Int]
+  in: [Int]
+  notIn: [Int]
+}
+
+input ModelSubscriptionFloatInput {
+  ne: Float
+  eq: Float
+  le: Float
+  lt: Float
+  ge: Float
+  gt: Float
+  between: [Float]
+  in: [Float]
+  notIn: [Float]
+}
+
+input ModelSubscriptionBooleanInput {
+  ne: Boolean
+  eq: Boolean
+}
+
+input ModelSubscriptionIDInput {
+  ne: ID
+  eq: ID
+  le: ID
+  lt: ID
+  ge: ID
+  gt: ID
+  contains: ID
+  notContains: ID
+  between: [ID]
+  beginsWith: ID
+  in: [ID]
+  notIn: [ID]
+}
+
+enum ModelAttributeTypes {
+  binary
+  binarySet
+  bool
+  list
+  map
+  number
+  numberSet
+  string
+  stringSet
+  _null
+}
+
+input ModelSizeInput {
+  ne: Int
+  eq: Int
+  le: Int
+  lt: Int
+  ge: Int
+  gt: Int
+  between: [Int]
+}
+
+enum ModelSortDirection {
+  ASC
+  DESC
+}
+
+type ModelUsersConnection @aws_iam @aws_cognito_user_pools {
+  items: [Users]!
+  nextToken: String
+}
+
+input ModelUsersFilterInput {
+  id: ModelIDInput
+  cognitoID: ModelIDInput
+  name: ModelStringInput
+  lastName: ModelStringInput
+  email: ModelStringInput
+  identityID: ModelIDInput
+  owner: ModelStringInput
+  and: [ModelUsersFilterInput]
+  or: [ModelUsersFilterInput]
+  not: ModelUsersFilterInput
+}
+
+input ModelUsersConditionInput {
+  cognitoID: ModelIDInput
+  name: ModelStringInput
+  lastName: ModelStringInput
+  email: ModelStringInput
+  identityID: ModelIDInput
+  owner: ModelStringInput
+  and: [ModelUsersConditionInput]
+  or: [ModelUsersConditionInput]
+  not: ModelUsersConditionInput
+}
+
+input CreateUsersInput {
+  id: ID
+  cognitoID: ID
+  name: String
+  lastName: String
+  email: String
+  identityID: ID
+  owner: String
+}
+
+input UpdateUsersInput {
+  id: ID!
+  cognitoID: ID
+  name: String
+  lastName: String
+  email: String
+  identityID: ID
+  owner: String
+}
+
+input DeleteUsersInput {
+  id: ID!
+}
+
+type Mutation {
+  createTags(input: CreateTagsInput!, condition: ModelTagsConditionInput): Tags
+  updateTags(input: UpdateTagsInput!, condition: ModelTagsConditionInput): Tags
+  deleteTags(input: DeleteTagsInput!, condition: ModelTagsConditionInput): Tags
+  createActivity(input: CreateActivityInput!, condition: ModelActivityConditionInput): Activity
+  updateActivity(input: UpdateActivityInput!, condition: ModelActivityConditionInput): Activity
+  deleteActivity(input: DeleteActivityInput!, condition: ModelActivityConditionInput): Activity
+  createActivityTags(input: CreateActivityTagsInput!, condition: ModelActivityTagsConditionInput): ActivityTags
+  updateActivityTags(input: UpdateActivityTagsInput!, condition: ModelActivityTagsConditionInput): ActivityTags
+  deleteActivityTags(input: DeleteActivityTagsInput!, condition: ModelActivityTagsConditionInput): ActivityTags
+  createUsers(input: CreateUsersInput!, condition: ModelUsersConditionInput): Users @aws_cognito_user_pools @aws_iam
+  updateUsers(input: UpdateUsersInput!, condition: ModelUsersConditionInput): Users @aws_cognito_user_pools @aws_iam
+  deleteUsers(input: DeleteUsersInput!, condition: ModelUsersConditionInput): Users @aws_cognito_user_pools @aws_iam
+  createBusiness(input: CreateBusinessInput!, condition: ModelBusinessConditionInput): Business @aws_api_key @aws_cognito_user_pools @aws_iam
+  updateBusiness(input: UpdateBusinessInput!, condition: ModelBusinessConditionInput): Business @aws_api_key @aws_cognito_user_pools @aws_iam
+  deleteBusiness(input: DeleteBusinessInput!, condition: ModelBusinessConditionInput): Business @aws_api_key @aws_cognito_user_pools @aws_iam
+  createFavorites(input: CreateFavoritesInput!, condition: ModelFavoritesConditionInput): Favorites @aws_cognito_user_pools @aws_iam
+  updateFavorites(input: UpdateFavoritesInput!, condition: ModelFavoritesConditionInput): Favorites @aws_cognito_user_pools @aws_iam
+  deleteFavorites(input: DeleteFavoritesInput!, condition: ModelFavoritesConditionInput): Favorites @aws_cognito_user_pools @aws_iam
+  createComplaints(input: CreateComplaintsInput!, condition: ModelComplaintsConditionInput): Complaints @aws_cognito_user_pools @aws_iam
+  updateComplaints(input: UpdateComplaintsInput!, condition: ModelComplaintsConditionInput): Complaints @aws_cognito_user_pools @aws_iam
+  deleteComplaints(input: DeleteComplaintsInput!, condition: ModelComplaintsConditionInput): Complaints @aws_cognito_user_pools @aws_iam
+  createLogs(input: CreateLogsInput!, condition: ModelLogsConditionInput): Logs @aws_cognito_user_pools @aws_iam
+  updateLogs(input: UpdateLogsInput!, condition: ModelLogsConditionInput): Logs @aws_cognito_user_pools @aws_iam
+  deleteLogs(input: DeleteLogsInput!, condition: ModelLogsConditionInput): Logs @aws_cognito_user_pools @aws_iam
+  createTesting(input: CreateTestingInput!, condition: ModelTestingConditionInput): Testing @aws_cognito_user_pools @aws_iam
+  updateTesting(input: UpdateTestingInput!, condition: ModelTestingConditionInput): Testing @aws_cognito_user_pools @aws_iam
+  deleteTesting(input: DeleteTestingInput!, condition: ModelTestingConditionInput): Testing @aws_cognito_user_pools @aws_iam
+}
+
+input ModelSubscriptionUsersFilterInput {
+  id: ModelSubscriptionIDInput
+  cognitoID: ModelSubscriptionIDInput
+  name: ModelSubscriptionStringInput
+  lastName: ModelSubscriptionStringInput
+  email: ModelSubscriptionStringInput
+  identityID: ModelSubscriptionIDInput
+  and: [ModelSubscriptionUsersFilterInput]
+  or: [ModelSubscriptionUsersFilterInput]
+}
+
+type Subscription {
+  onCreateTags(filter: ModelSubscriptionTagsFilterInput): Tags @aws_subscribe(mutations: ["createTags"])
+  onUpdateTags(filter: ModelSubscriptionTagsFilterInput): Tags @aws_subscribe(mutations: ["updateTags"])
+  onDeleteTags(filter: ModelSubscriptionTagsFilterInput): Tags @aws_subscribe(mutations: ["deleteTags"])
+  onCreateActivity(filter: ModelSubscriptionActivityFilterInput): Activity @aws_subscribe(mutations: ["createActivity"])
+  onUpdateActivity(filter: ModelSubscriptionActivityFilterInput): Activity @aws_subscribe(mutations: ["updateActivity"])
+  onDeleteActivity(filter: ModelSubscriptionActivityFilterInput): Activity @aws_subscribe(mutations: ["deleteActivity"])
+  onCreateActivityTags(filter: ModelSubscriptionActivityTagsFilterInput): ActivityTags @aws_subscribe(mutations: ["createActivityTags"])
+  onUpdateActivityTags(filter: ModelSubscriptionActivityTagsFilterInput): ActivityTags @aws_subscribe(mutations: ["updateActivityTags"])
+  onDeleteActivityTags(filter: ModelSubscriptionActivityTagsFilterInput): ActivityTags @aws_subscribe(mutations: ["deleteActivityTags"])
+  onCreateUsers(filter: ModelSubscriptionUsersFilterInput, owner: String): Users @aws_subscribe(mutations: ["createUsers"]) @aws_iam @aws_cognito_user_pools
+  onUpdateUsers(filter: ModelSubscriptionUsersFilterInput, owner: String): Users @aws_subscribe(mutations: ["updateUsers"]) @aws_iam @aws_cognito_user_pools
+  onDeleteUsers(filter: ModelSubscriptionUsersFilterInput, owner: String): Users @aws_subscribe(mutations: ["deleteUsers"]) @aws_iam @aws_cognito_user_pools
+  onCreateBusiness(filter: ModelSubscriptionBusinessFilterInput, owner: String): Business @aws_subscribe(mutations: ["createBusiness"]) @aws_api_key @aws_iam @aws_cognito_user_pools
+  onUpdateBusiness(filter: ModelSubscriptionBusinessFilterInput, owner: String): Business @aws_subscribe(mutations: ["updateBusiness"]) @aws_api_key @aws_iam @aws_cognito_user_pools
+  onDeleteBusiness(filter: ModelSubscriptionBusinessFilterInput, owner: String): Business @aws_subscribe(mutations: ["deleteBusiness"]) @aws_api_key @aws_iam @aws_cognito_user_pools
+  onCreateFavorites(filter: ModelSubscriptionFavoritesFilterInput, owner: String): Favorites @aws_subscribe(mutations: ["createFavorites"]) @aws_iam @aws_cognito_user_pools
+  onUpdateFavorites(filter: ModelSubscriptionFavoritesFilterInput, owner: String): Favorites @aws_subscribe(mutations: ["updateFavorites"]) @aws_iam @aws_cognito_user_pools
+  onDeleteFavorites(filter: ModelSubscriptionFavoritesFilterInput, owner: String): Favorites @aws_subscribe(mutations: ["deleteFavorites"]) @aws_iam @aws_cognito_user_pools
+  onCreateComplaints(filter: ModelSubscriptionComplaintsFilterInput, owner: String): Complaints @aws_subscribe(mutations: ["createComplaints"]) @aws_cognito_user_pools @aws_iam
+  onUpdateComplaints(filter: ModelSubscriptionComplaintsFilterInput, owner: String): Complaints @aws_subscribe(mutations: ["updateComplaints"]) @aws_cognito_user_pools @aws_iam
+  onDeleteComplaints(filter: ModelSubscriptionComplaintsFilterInput, owner: String): Complaints @aws_subscribe(mutations: ["deleteComplaints"]) @aws_cognito_user_pools @aws_iam
+  onCreateLogs(filter: ModelSubscriptionLogsFilterInput): Logs @aws_subscribe(mutations: ["createLogs"]) @aws_cognito_user_pools @aws_iam
+  onUpdateLogs(filter: ModelSubscriptionLogsFilterInput): Logs @aws_subscribe(mutations: ["updateLogs"]) @aws_cognito_user_pools @aws_iam
+  onDeleteLogs(filter: ModelSubscriptionLogsFilterInput): Logs @aws_subscribe(mutations: ["deleteLogs"]) @aws_cognito_user_pools @aws_iam
+  onCreateTesting(filter: ModelSubscriptionTestingFilterInput): Testing @aws_subscribe(mutations: ["createTesting"]) @aws_cognito_user_pools @aws_iam
+  onUpdateTesting(filter: ModelSubscriptionTestingFilterInput): Testing @aws_subscribe(mutations: ["updateTesting"]) @aws_cognito_user_pools @aws_iam
+  onDeleteTesting(filter: ModelSubscriptionTestingFilterInput): Testing @aws_subscribe(mutations: ["deleteTesting"]) @aws_cognito_user_pools @aws_iam
+}
+
+input CoordinatesInput {
+  lat: Float!
+  lon: Float!
+}
+
+type ModelBusinessConnection @aws_cognito_user_pools @aws_iam @aws_api_key {
+  items: [Business]!
+  nextToken: String
+}
+
+input ModelBusinessFilterInput {
+  id: ModelIDInput
+  userID: ModelIDInput
+  name: ModelStringInput
+  image: ModelStringInput
+  email: ModelStringInput
+  phone: ModelStringInput
+  whatsapp: ModelStringInput
+  instagram: ModelStringInput
+  facebook: ModelStringInput
+  page: ModelStringInput
+  activity: ModelStringInput
+  tags: ModelStringInput
+  and: [ModelBusinessFilterInput]
+  or: [ModelBusinessFilterInput]
+  not: ModelBusinessFilterInput
+}
+
+input ModelBusinessConditionInput {
+  userID: ModelIDInput
+  name: ModelStringInput
+  image: ModelStringInput
+  email: ModelStringInput
+  phone: ModelStringInput
+  whatsapp: ModelStringInput
+  instagram: ModelStringInput
+  facebook: ModelStringInput
+  page: ModelStringInput
+  activity: ModelStringInput
+  tags: ModelStringInput
+  and: [ModelBusinessConditionInput]
+  or: [ModelBusinessConditionInput]
+  not: ModelBusinessConditionInput
+}
+
+input CreateBusinessInput {
+  id: ID
+  userID: ID
+  name: String
+  image: String
+  email: String
+  phone: String
+  whatsapp: String
+  instagram: String
+  facebook: String
+  page: String
+  coordinates: CoordinatesInput
+  activity: String
+  tags: [String]
+}
+
+input UpdateBusinessInput {
+  id: ID!
+  userID: ID
+  name: String
+  image: String
+  email: String
+  phone: String
+  whatsapp: String
+  instagram: String
+  facebook: String
+  page: String
+  coordinates: CoordinatesInput
+  activity: String
+  tags: [String]
+}
+
+input DeleteBusinessInput {
+  id: ID!
+}
+
+input ModelSubscriptionBusinessFilterInput {
+  id: ModelSubscriptionIDInput
+  userID: ModelSubscriptionIDInput
+  name: ModelSubscriptionStringInput
+  image: ModelSubscriptionStringInput
+  email: ModelSubscriptionStringInput
+  phone: ModelSubscriptionStringInput
+  whatsapp: ModelSubscriptionStringInput
+  instagram: ModelSubscriptionStringInput
+  facebook: ModelSubscriptionStringInput
+  page: ModelSubscriptionStringInput
+  activity: ModelSubscriptionStringInput
+  tags: ModelSubscriptionStringInput
+  and: [ModelSubscriptionBusinessFilterInput]
+  or: [ModelSubscriptionBusinessFilterInput]
+}
+
+type ModelTagsConnection {
+  items: [Tags]!
+  nextToken: String
+}
+
+input ModelTagsFilterInput {
+  id: ModelIDInput
+  name: ModelStringInput
+  and: [ModelTagsFilterInput]
+  or: [ModelTagsFilterInput]
+  not: ModelTagsFilterInput
+}
+
+input ModelTagsConditionInput {
+  name: ModelStringInput
+  and: [ModelTagsConditionInput]
+  or: [ModelTagsConditionInput]
+  not: ModelTagsConditionInput
+}
+
+input CreateTagsInput {
+  id: ID
+  name: String!
+}
+
+input UpdateTagsInput {
+  id: ID!
+  name: String
+}
+
+input DeleteTagsInput {
+  id: ID!
+}
+
+input ModelSubscriptionTagsFilterInput {
+  id: ModelSubscriptionIDInput
+  name: ModelSubscriptionStringInput
+  and: [ModelSubscriptionTagsFilterInput]
+  or: [ModelSubscriptionTagsFilterInput]
+}
+
+type ModelActivityConnection {
+  items: [Activity]!
+  nextToken: String
+}
+
+input ModelActivityFilterInput {
+  id: ModelIDInput
+  name: ModelStringInput
+  and: [ModelActivityFilterInput]
+  or: [ModelActivityFilterInput]
+  not: ModelActivityFilterInput
+}
+
+input ModelActivityConditionInput {
+  name: ModelStringInput
+  and: [ModelActivityConditionInput]
+  or: [ModelActivityConditionInput]
+  not: ModelActivityConditionInput
+}
+
+input CreateActivityInput {
+  id: ID
+  name: String!
+}
+
+input UpdateActivityInput {
+  id: ID!
+  name: String
+}
+
+input DeleteActivityInput {
+  id: ID!
+}
+
+input ModelSubscriptionActivityFilterInput {
+  id: ModelSubscriptionIDInput
+  name: ModelSubscriptionStringInput
+  and: [ModelSubscriptionActivityFilterInput]
+  or: [ModelSubscriptionActivityFilterInput]
+}
+
+type ModelFavoritesConnection @aws_cognito_user_pools @aws_iam @aws_api_key {
+  items: [Favorites]!
+  nextToken: String
+}
+
+input ModelFavoritesFilterInput {
+  id: ModelIDInput
+  businessID: ModelIDInput
+  userID: ModelIDInput
+  position: ModelIntInput
+  owner: ModelStringInput
+  and: [ModelFavoritesFilterInput]
+  or: [ModelFavoritesFilterInput]
+  not: ModelFavoritesFilterInput
+}
+
+input ModelFavoritesConditionInput {
+  businessID: ModelIDInput
+  userID: ModelIDInput
+  position: ModelIntInput
+  owner: ModelStringInput
+  and: [ModelFavoritesConditionInput]
+  or: [ModelFavoritesConditionInput]
+  not: ModelFavoritesConditionInput
+}
+
+input CreateFavoritesInput {
+  id: ID
+  businessID: ID!
+  userID: ID
+  position: Int
+  owner: String
+}
+
+input UpdateFavoritesInput {
+  id: ID!
+  businessID: ID
+  userID: ID
+  position: Int
+  owner: String
+}
+
+input DeleteFavoritesInput {
+  id: ID!
+}
+
+input ModelSubscriptionFavoritesFilterInput {
+  id: ModelSubscriptionIDInput
+  businessID: ModelSubscriptionIDInput
+  userID: ModelSubscriptionIDInput
+  position: ModelSubscriptionIntInput
+  and: [ModelSubscriptionFavoritesFilterInput]
+  or: [ModelSubscriptionFavoritesFilterInput]
+}
+
+type ModelComplaintsConnection @aws_cognito_user_pools @aws_iam {
+  items: [Complaints]!
+  nextToken: String
+}
+
+input ModelComplaintStatusInput {
+  eq: ComplaintStatus
+  ne: ComplaintStatus
+}
+
+input ModelComplaintsFilterInput {
+  id: ModelIDInput
+  userID: ModelIDInput
+  businessID: ModelIDInput
+  description: ModelStringInput
+  status: ModelComplaintStatusInput
+  and: [ModelComplaintsFilterInput]
+  or: [ModelComplaintsFilterInput]
+  not: ModelComplaintsFilterInput
+}
+
+input ModelComplaintsConditionInput {
+  userID: ModelIDInput
+  businessID: ModelIDInput
+  description: ModelStringInput
+  status: ModelComplaintStatusInput
+  and: [ModelComplaintsConditionInput]
+  or: [ModelComplaintsConditionInput]
+  not: ModelComplaintsConditionInput
+}
+
+input CreateComplaintsInput {
+  id: ID
+  userID: ID!
+  businessID: ID!
+  description: String!
+  status: ComplaintStatus!
+}
+
+input UpdateComplaintsInput {
+  id: ID!
+  userID: ID
+  businessID: ID
+  description: String
+  status: ComplaintStatus
+}
+
+input DeleteComplaintsInput {
+  id: ID!
+}
+
+input ModelSubscriptionComplaintsFilterInput {
+  id: ModelSubscriptionIDInput
+  userID: ModelSubscriptionIDInput
+  businessID: ModelSubscriptionIDInput
+  description: ModelSubscriptionStringInput
+  status: ModelSubscriptionStringInput
+  and: [ModelSubscriptionComplaintsFilterInput]
+  or: [ModelSubscriptionComplaintsFilterInput]
+}
+
+type ModelLogsConnection @aws_cognito_user_pools @aws_iam {
+  items: [Logs]!
+  nextToken: String
+}
+
+input ModelTypeLogsInput {
+  eq: TypeLogs
+  ne: TypeLogs
+}
+
+input ModelLogsFilterInput {
+  id: ModelIDInput
+  userID: ModelIDInput
+  type: ModelTypeLogsInput
+  text: ModelStringInput
+  businessID: ModelIDInput
+  posI: ModelIntInput
+  posE: ModelIntInput
+  name: ModelStringInput
+  and: [ModelLogsFilterInput]
+  or: [ModelLogsFilterInput]
+  not: ModelLogsFilterInput
+}
+
+input ModelLogsConditionInput {
+  userID: ModelIDInput
+  type: ModelTypeLogsInput
+  text: ModelStringInput
+  businessID: ModelIDInput
+  posI: ModelIntInput
+  posE: ModelIntInput
+  name: ModelStringInput
+  and: [ModelLogsConditionInput]
+  or: [ModelLogsConditionInput]
+  not: ModelLogsConditionInput
+}
+
+input CreateLogsInput {
+  id: ID
+  userID: ID!
+  type: TypeLogs
+  text: String
+  businessID: ID
+  posI: Int
+  posE: Int
+  name: String
+}
+
+input UpdateLogsInput {
+  id: ID!
+  userID: ID
+  type: TypeLogs
+  text: String
+  businessID: ID
+  posI: Int
+  posE: Int
+  name: String
+}
+
+input DeleteLogsInput {
+  id: ID!
+}
+
+input ModelSubscriptionLogsFilterInput {
+  id: ModelSubscriptionIDInput
+  userID: ModelSubscriptionIDInput
+  type: ModelSubscriptionStringInput
+  text: ModelSubscriptionStringInput
+  businessID: ModelSubscriptionIDInput
+  posI: ModelSubscriptionIntInput
+  posE: ModelSubscriptionIntInput
+  name: ModelSubscriptionStringInput
+  and: [ModelSubscriptionLogsFilterInput]
+  or: [ModelSubscriptionLogsFilterInput]
+}
+
+type ModelTestingConnection @aws_cognito_user_pools @aws_iam {
+  items: [Testing]!
+  nextToken: String
+}
+
+input ModelTestingFilterInput {
+  id: ModelIDInput
+  name: ModelStringInput
+  and: [ModelTestingFilterInput]
+  or: [ModelTestingFilterInput]
+  not: ModelTestingFilterInput
+}
+
+input ModelTestingConditionInput {
+  name: ModelStringInput
+  and: [ModelTestingConditionInput]
+  or: [ModelTestingConditionInput]
+  not: ModelTestingConditionInput
+}
+
+input CreateTestingInput {
+  id: ID
+  name: [String!]!
+  coordinates: CoordinatesInput!
+}
+
+input UpdateTestingInput {
+  id: ID!
+  name: [String!]
+  coordinates: CoordinatesInput
+}
+
+input DeleteTestingInput {
+  id: ID!
+}
+
+input ModelSubscriptionTestingFilterInput {
+  id: ModelSubscriptionIDInput
+  name: ModelSubscriptionStringInput
+  and: [ModelSubscriptionTestingFilterInput]
+  or: [ModelSubscriptionTestingFilterInput]
+}
+
+type ModelActivityTagsConnection {
+  items: [ActivityTags]!
+  nextToken: String
+}
+
+input ModelActivityTagsFilterInput {
+  id: ModelIDInput
+  tagsId: ModelIDInput
+  activityId: ModelIDInput
+  and: [ModelActivityTagsFilterInput]
+  or: [ModelActivityTagsFilterInput]
+  not: ModelActivityTagsFilterInput
+}
+
+input ModelActivityTagsConditionInput {
+  tagsId: ModelIDInput
+  activityId: ModelIDInput
+  and: [ModelActivityTagsConditionInput]
+  or: [ModelActivityTagsConditionInput]
+  not: ModelActivityTagsConditionInput
+}
+
+input CreateActivityTagsInput {
+  id: ID
+  tagsId: ID!
+  activityId: ID!
+}
+
+input UpdateActivityTagsInput {
+  id: ID!
+  tagsId: ID
+  activityId: ID
+}
+
+input DeleteActivityTagsInput {
+  id: ID!
+}
+
+input ModelSubscriptionActivityTagsFilterInput {
+  id: ModelSubscriptionIDInput
+  tagsId: ModelSubscriptionIDInput
+  activityId: ModelSubscriptionIDInput
+  and: [ModelSubscriptionActivityTagsFilterInput]
+  or: [ModelSubscriptionActivityTagsFilterInput]
+}
+
+input ModelIDKeyConditionInput {
+  eq: ID
+  le: ID
+  lt: ID
+  ge: ID
+  gt: ID
+  between: [ID]
+  beginsWith: ID
+}
+
+input SearchableStringFilterInput {
+  ne: String
+  gt: String
+  lt: String
+  gte: String
+  lte: String
+  eq: String
+  match: String
+  matchPhrase: String
+  matchPhrasePrefix: String
+  multiMatch: String
+  exists: Boolean
+  wildcard: String
+  regexp: String
+  range: [String]
+}
+
+input SearchableIntFilterInput {
+  ne: Int
+  gt: Int
+  lt: Int
+  gte: Int
+  lte: Int
+  eq: Int
+  range: [Int]
+}
+
+input SearchableFloatFilterInput {
+  ne: Float
+  gt: Float
+  lt: Float
+  gte: Float
+  lte: Float
+  eq: Float
+  range: [Float]
+}
+
+input SearchableBooleanFilterInput {
+  eq: Boolean
+  ne: Boolean
+}
+
+input SearchableIDFilterInput {
+  ne: ID
+  gt: ID
+  lt: ID
+  gte: ID
+  lte: ID
+  eq: ID
+  match: ID
+  matchPhrase: ID
+  matchPhrasePrefix: ID
+  multiMatch: ID
+  exists: Boolean
+  wildcard: ID
+  regexp: ID
+  range: [ID]
+}
+
+input SearchableBusinessFilterInput {
+  id: SearchableIDFilterInput
+  userID: SearchableIDFilterInput
+  name: SearchableStringFilterInput
+  image: SearchableStringFilterInput
+  email: SearchableStringFilterInput
+  phone: SearchableStringFilterInput
+  whatsapp: SearchableStringFilterInput
+  instagram: SearchableStringFilterInput
+  facebook: SearchableStringFilterInput
+  page: SearchableStringFilterInput
+  activity: SearchableStringFilterInput
+  tags: SearchableStringFilterInput
+  createdAt: SearchableStringFilterInput
+  updatedAt: SearchableStringFilterInput
+  and: [SearchableBusinessFilterInput]
+  or: [SearchableBusinessFilterInput]
+  not: SearchableBusinessFilterInput
+}
+
+enum SearchableSortDirection {
+  asc
+  desc
+}
+
+enum SearchableBusinessSortableFields {
+  id
+  userID
+  name
+  image
+  email
+  phone
+  whatsapp
+  instagram
+  facebook
+  page
+  activity
+  tags
+  createdAt
+  updatedAt
+}
+
+input SearchableBusinessSortInput {
+  field: SearchableBusinessSortableFields
+  direction: SearchableSortDirection
+}
+
+enum SearchableAggregateType {
+  terms
+  avg
+  min
+  max
+  sum
+}
+
+enum SearchableBusinessAggregateField {
+  id
+  userID
+  name
+  image
+  email
+  phone
+  whatsapp
+  instagram
+  facebook
+  page
+  activity
+  tags
+  createdAt
+  updatedAt
+}
+
+input SearchableBusinessAggregationInput {
+  name: String!
+  type: SearchableAggregateType!
+  field: SearchableBusinessAggregateField!
+}
+
+input SearchableTestingFilterInput {
+  id: SearchableIDFilterInput
+  name: SearchableStringFilterInput
+  createdAt: SearchableStringFilterInput
+  updatedAt: SearchableStringFilterInput
+  and: [SearchableTestingFilterInput]
+  or: [SearchableTestingFilterInput]
+  not: SearchableTestingFilterInput
+}
+
+enum SearchableTestingSortableFields {
+  id
+  name
+  createdAt
+  updatedAt
+}
+
+input SearchableTestingSortInput {
+  field: SearchableTestingSortableFields
+  direction: SearchableSortDirection
+}
+
+enum SearchableTestingAggregateField {
+  id
+  name
+  createdAt
+  updatedAt
+}
+
+input SearchableTestingAggregationInput {
+  name: String!
+  type: SearchableAggregateType!
+  field: SearchableTestingAggregateField!
+}

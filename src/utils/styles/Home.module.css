@@ -1,0 +1,18 @@
+.search {
+    /* flex: 1; */
+    margin-top: 20px;
+    text-align: center;
+    width: 200px;
+    padding: 20px;
+    height: 60px;
+    background-color: #ffa424;
+    border-radius: 16px;
+  }
+  
+  .textSearch {
+    text-align: center;
+    font-family: "medium";
+    color: white;
+    font-size: 15px;
+  }
+  

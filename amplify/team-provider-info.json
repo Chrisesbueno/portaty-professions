@@ -1,0 +1,29 @@
+{
+  "dev": {
+    "awscloudformation": {
+      "AuthRoleName": "amplify-professions-dev-202858-authRole",
+      "UnauthRoleArn": "arn:aws:iam::086563672363:role/amplify-professions-dev-202858-unauthRole",
+      "AuthRoleArn": "arn:aws:iam::086563672363:role/amplify-professions-dev-202858-authRole",
+      "Region": "us-east-1",
+      "DeploymentBucketName": "amplify-professions-dev-202858-deployment",
+      "UnauthRoleName": "amplify-professions-dev-202858-unauthRole",
+      "StackName": "amplify-professions-dev-202858",
+      "StackId": "arn:aws:cloudformation:us-east-1:086563672363:stack/amplify-professions-dev-202858/b3a16a10-3885-11ee-bbba-12dc68bdc481",
+      "AmplifyAppId": "d3l0nme1mtpq63"
+    },
+    "categories": {
+      "auth": {
+        "professions": {}
+      },
+      "api": {
+        "professionGraphql": {}
+      },
+      "storage": {
+        "s3Professions": {}
+      },
+      "function": {
+        "uploadBusinessImages": {}
+      }
+    }
+  }
+}

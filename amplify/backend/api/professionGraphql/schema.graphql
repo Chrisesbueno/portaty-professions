@@ -1,0 +1,220 @@
+# schema
+type Users
+  @model
+  @auth(
+    rules: [
+      { allow: owner }
+      { allow: private, provider: iam, operations: [read] }
+    ]
+  ) {
+  id: ID
+  cognitoID: ID @auth(rules: [{ allow: owner, operations: [read, delete] }])
+  name: String @auth(rules: [{ allow: owner }])
+  lastName: String @auth(rules: [{ allow: owner }])
+  email: String
+    @auth(rules: [{ allow: owner }])
+    @index(name: "byEmailUser", queryField: "userByEmail")
+  identityID: ID
+    @auth(
+      rules: [
+        { allow: owner }
+        { allow: private, provider: iam, operations: [read] }
+      ]
+    )
+  favorites: [Favorites] @hasMany(indexName: "byUsersFavorites", fields: ["id"])
+  business: [Business] @hasMany(indexName: "byUsersBusiness", fields: ["id"])
+  owner: String @auth(rules: [{ allow: owner, operations: [read, delete] }])
+}
+
+type Business
+  @model
+  @searchable
+  @auth(
+    rules: [
+      { allow: owner }
+      { allow: private, provider: iam, operations: [read] }
+      { allow: private, operations: [read] }
+    ]
+  ) {
+  id: ID!
+  userID: ID @index(name: "byUsersBusiness")
+  user: Users @belongsTo(fields: ["userID"])
+  identityID: String
+  name: String
+  image: String
+  email: String
+  phone: String
+  whatsapp: String
+  instagram: String
+  facebook: String
+  page: String
+  coordinates: Coordinates
+  activity: String
+  tags: [String]
+  favorites: [Favorites]
+    @hasMany(indexName: "byBusinessFavorites", fields: ["id"])
+}
+
+type Tags @model @auth(rules: [{ allow: private, provider: iam }]) {
+  id: ID!
+  name: String!
+  objects: [Activity] @manyToMany(relationName: "ActivityTags")
+}
+
+type Activity @model @auth(rules: [{ allow: private, provider: iam }]) {
+  id: ID!
+  name: String!
+  tags: [Tags] @manyToMany(relationName: "ActivityTags")
+}
+
+type Favorites
+  @model
+  @auth(
+    rules: [
+      { allow: owner }
+      { allow: private, provider: iam, operations: [read] }
+      { allow: groups, groups: ["sp"], operations: [read] }
+    ]
+  ) {
+  id: ID!
+    @auth(
+      rules: [
+        { allow: owner }
+        { allow: private, provider: iam, operations: [read] }
+        { allow: groups, groups: ["sp"], operations: [read] }
+      ]
+    )
+  businessID: ID!
+    @index(
+      name: "byBusinessFavorites"
+      sortKeyFields: ["userID"]
+      queryField: "favoritesByBusinessID"
+    )
+    @auth(
+      rules: [
+        { allow: owner }
+        { allow: private, provider: iam, operations: [read] }
+        { allow: groups, groups: ["sp"], operations: [read] }
+      ]
+    )
+  business: Business @belongsTo(fields: ["businessID"])
+  userID: ID
+    @index(name: "byUsersFavorites")
+    @auth(
+      rules: [
+        { allow: owner }
+        { allow: groups, groups: ["sp"], operations: [read] }
+      ]
+    )
+  user: Users @belongsTo(fields: ["userID"])
+  position: Int
+  owner: String
+    @auth(
+      rules: [
+        { allow: owner, operations: [read, delete] }
+        { allow: groups, groups: ["sp"], operations: [read] }
+      ]
+    )
+}
+
+type Complaints
+  @model
+  @auth(
+    rules: [
+      { allow: owner, operations: [create, read, update] }
+      { allow: groups, groups: ["sp"], operations: [read, update, delete] }
+    ]
+  ) {
+  id: ID!
+  userID: ID!
+    @auth(
+      rules: [
+        { allow: owner, operations: [create, read, update] }
+        { allow: groups, groups: ["sp"], operations: [read, update, delete] }
+      ]
+    )
+  businessID: ID!
+    @auth(
+      rules: [
+        { allow: owner, operations: [create, read, update] }
+        { allow: groups, groups: ["sp"], operations: [read, update, delete] }
+      ]
+    )
+  description: String!
+    @auth(
+      rules: [
+        { allow: owner, operations: [create, read, update] }
+        { allow: groups, groups: ["sp"], operations: [read, update, delete] }
+      ]
+    )
+  status: ComplaintStatus!
+}
+
+type Logs @model @auth(rules: [{ allow: groups, groups: ["sp"] }]) {
+  id: ID!
+  userID: ID!
+  type: TypeLogs
+  # type searchs
+  text: String
+  # type favorite
+  businessID: ID
+  posI: Int
+  posE: Int
+  # type business views
+  name: String
+}
+
+# object
+# enum
+enum ComplaintStatus {
+  PENDING
+  IN_REVIEW
+  IN_PROGRESS
+  RESOLVED
+  REFUSED
+  CANCELLED
+}
+
+enum TypeLogs {
+  SEARCH
+  BUSINESS_VIEW
+  FAVORITE
+}
+
+type Testing @model @searchable @auth(rules: [{ allow: private }]) {
+  id: ID!
+  name: [String!]!
+  coordinates: Coordinates!
+}
+
+type Coordinates {
+  lat: Float!
+  lon: Float!
+}
+
+type Query {
+  searchByDistance(location: LocationInput!, km: Int): TestingConnection
+  searchBusinessByDistance(
+    location: LocationInput!
+    km: Float
+    text: String!
+  ): BusinessConnection
+}
+
+input LocationInput {
+  lat: Float!
+  lon: Float!
+}
+
+type TestingConnection {
+  items: [Testing]
+  total: Int
+  nextToken: String
+}
+
+type BusinessConnection {
+  items: [Business]
+  total: Int
+  nextToken: String
+}
+# custom queries and mutations

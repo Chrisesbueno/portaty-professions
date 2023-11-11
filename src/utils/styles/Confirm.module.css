@@ -1,0 +1,54 @@
+.container {
+  flex: 1;
+  padding: 20px;
+}
+.content {
+  flex: 1;
+}
+.scroll {
+  flex: 1;
+  margin-bottom: 20px;
+}
+
+.continue {
+  text-align: center;
+  width: 100%;
+  padding: 20px;
+  height: 60px;
+  background-color: #ffa424;
+  border-radius: 16px;
+}
+
+.textContinue {
+  text-align: center;
+  font-family: 'medium';
+  /* font-weight: 700; */
+  color: white;
+  font-size: 14px;
+}
+
+.textContainer {
+  margin-top: 30px;
+  justify-content: center;
+}
+.title {
+  font-family: "name";
+  margin: 15% 10px 0%;
+  text-align: center;
+  font-size: 42px;
+}
+
+.titleAlert {
+  text-align: center;
+  font-family: 'thin';
+  font-size: 20px;
+  margin-bottom: 3px;
+}
+.subtitleAlert {
+  font-family: 'medium';
+  text-align: center;
+  font-size: 15px;
+  margin-left: 5px;
+  color: #fb8500;
+
+}

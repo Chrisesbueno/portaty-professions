@@ -1,0 +1,32 @@
+.inputs {
+  flex-direction: row;
+  justify-content: space-between;
+  margin-top: 20%;
+}
+.input {
+  width: 45px;
+  height: 45px;
+  padding: 0px 16px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  font-weight: 100;
+  margin-bottom: 25px;
+  border: 1px solid #fb8500;
+  font-family: 'light';
+  font-size: 18px;
+}
+.title {
+  text-align: center;
+  font-family: 'thin';
+  font-size: 20px;
+  margin-bottom: 3px;
+}
+.subtitle {
+  font-family: 'medium';
+  text-align: center;
+  font-size: 15px;
+  margin-left: 5px;
+  color: #fb8500;
+
+}

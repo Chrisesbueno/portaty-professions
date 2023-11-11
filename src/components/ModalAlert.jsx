@@ -1,0 +1,70 @@
+import {
+  Image,
+  Modal,
+  Pressable,
+  Text,
+  TouchableOpacity,
+  TouchableWithoutFeedback,
+  View,
+} from "react-native";
+import React from "react";
+import styles from "@/utils/styles/ModalAlert.module.css";
+
+const ModalAlert = ({ text, icon, close, open }) => {
+  const global = require("@/utils/styles/global.js");
+  return (
+    <Modal
+      animationType="none"
+      transparent={true}
+      visible={open}
+      onRequestClose={close}
+    >
+      <TouchableWithoutFeedback onPress={close}>
+        <View style={styles.modalContainer}>
+          <TouchableWithoutFeedback>
+            <View style={styles.modalContent}>
+              <View style={{ flex: 1 }}>
+                <View>
+                  <Image
+                    style={{
+                      width: 75,
+                      height: 75,
+                      resizeMode: "cover",
+                      alignSelf: "center",
+                    }}
+                    source={icon}
+                  />
+                  <View style={{ paddingVertical: 15 }}>
+                    <Text style={{ fontFamily: "light", fontSize: 16 }}>
+                      {text}
+                    </Text>
+                  </View>
+                </View>
+                <Pressable
+                  onPress={close}
+                  style={[
+                    global.mainBgColor,
+                    {
+                      marginTop: 30,
+                      padding: 10,
+                      borderRadius: 6,
+                      width: 80,
+                      alignItems: "center",
+                      alignSelf: "flex-end",
+                    },
+                  ]}
+                >
+                  <Text style={[global.white, { fontFamily: "medium" }]}>
+                    Aceptar
+                  </Text>
+                </Pressable>
+              </View>
+            </View>
+          </TouchableWithoutFeedback>
+        </View>
+      </TouchableWithoutFeedback>
+    </Modal>
+  );
+};
+
+export default ModalAlert;

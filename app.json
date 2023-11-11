@@ -1,38 +1,152 @@
 {
   "expo": {
-    "name": "portaty",
-    "slug": "portaty",
-    "version": "1.0.0",
-    "orientation": "portrait",
-    "icon": "./src/assets/images/icon.png",
-    "userInterfaceStyle": "light",
     "scheme": "portaty",
+    "name": "portaty-professions",
+    "slug": "portaty-professions",
+    "owner": "portaty",
+    "version": "0.6.0.4",
+    "orientation": "portrait",
+    "icon": "./assets/favicon.png",
+    "userInterfaceStyle": "light",
     "splash": {
-      "image": "./src/assets/images/splash.png",
+      "image": "./assets/splash.png",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#fb8500"
     },
-    "assetBundlePatterns": [
-      "**/*"
-    ],
+    "updates": {
+      "fallbackToCacheTimeout": 0,
+      "url": "https://u.expo.dev/b378d102-5cf7-49fc-93f0-b5df7f83d8ad"
+    },
+    "assetBundlePatterns": ["*/"],
     "ios": {
-      "supportsTablet": true
+      "runtimeVersion": "exposdk:48.0.0",
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSContactsUsageDescription": "Allow Portaty to access your contacts.",
+        "NSCalendarsUsageDescription": "Portaty needs to access your calendar.",
+        "NSRemindersUsageDescription": "Allow $(PRODUCT_NAME) to access your reminders",
+        "NSPhotoLibraryUsageDescription": "Allow Portasty to access your photos.",
+        "NSPhotoLibraryAddUsageDescription": "Allow Portaty to save photos."
+      },
+      "bundleIdentifier": "com.teamportaty.appdev",
+      "versionCode": 28
     },
     "android": {
+      "runtimeVersion": "exposdk:48.0.0",
+      "config": {
+        "googleMaps": {
+          "apiKey": "AIzaSyDN14xck20KdIg4qVLW4o7ReqTfEUvFTCc"
+        }
+      },
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "autoVerify": true,
+          "data": [
+            {
+              "scheme": "https",
+              "host": "www.portaty.com",
+              "pathPrefix": "/"
+            },
+            {
+              "scheme": "https",
+              "host": "www.portaty.com",
+              "pathPrefix": "/share/list"
+            },
+            {
+              "scheme": "https",
+              "host": "www.portaty.com",
+              "pathPrefix": "/share/business"
+            }
+          ],
+          "category": ["BROWSABLE", "DEFAULT"]
+        }
+      ],
       "adaptiveIcon": {
-        "foregroundImage": "./src/assets/images/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
-      }
+        "foregroundImage": "./assets/favicon.png",
+        "backgroundColor": "#FFFFFF"
+      },
+      "permissions": [
+        "android.permission.RECORD_AUDIO",
+        "android.permission.READ_CONTACTS",
+        "android.permission.WRITE_CONTACTS",
+        "android.permission.READ_CALENDAR",
+        "android.permission.WRITE_CALENDAR",
+        "android.permission.CAMERA",
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.FOREGROUND_SERVICE",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+        "android.permission.ACCESS_MEDIA_LOCATION"
+      ],
+      "package": "com.teamportaty.appdev",
+      "versionCode": 50
     },
     "web": {
-      "bundler": "metro",
-      "favicon": "./src/assets/images/favicon.png"
+      "favicon": "./assets/favicon.png"
     },
-    "experiments": {
-      "typedRoutes": true
+    "packagerOpts": {
+      "config": "metro.config.js",
+      "sourceExts": ["js", "jsx", "css"]
     },
     "plugins": [
-      "expo-router"
-    ]
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "compileSdkVersion": 33,
+            "targetSdkVersion": 33,
+            "buildToolsVersion": "33.0.0"
+          },
+          "ios": {
+            "deploymentTarget": "13.0"
+          }
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Espero no tengas nudes"
+        }
+      ],
+      [
+        "expo-contacts",
+        {
+          "contactsPermission": "Allow Portaty to access your contacts."
+        }
+      ],
+      [
+        "expo-calendar",
+        {
+          "calendarPermission": "Portaty needs to access your calendar."
+        }
+      ],
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Allow Portaty to access your camera."
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "Allow Portaty to use your location."
+        }
+      ],
+      [
+        "expo-media-library",
+        {
+          "photosPermission": "Allow Portasty to access your photos.",
+          "savePhotosPermission": "Allow Portaty to save photos.",
+          "isAccessMediaLocationEnabled": true
+        }
+      ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "b378d102-5cf7-49fc-93f0-b5df7f83d8ad"
+      }
+    }
   }
 }

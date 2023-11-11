@@ -1,0 +1,17 @@
+[
+  {
+    "category": "auth",
+    "resourceName": "professions",
+    "service": "Cognito"
+  },
+  {
+    "category": "api",
+    "resourceName": "professionGraphql",
+    "service": "AppSync"
+  },
+  {
+    "category": "storage",
+    "resourceName": "s3Professions",
+    "service": "S3"
+  }
+]

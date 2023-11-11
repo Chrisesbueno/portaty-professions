@@ -1,0 +1,29 @@
+## [Start] Authorization Steps. **
+$util.qr($ctx.stash.put("hasAuth", true))
+#set( $isAuthorized = false )
+#set( $totalFields = ["id","name","coordinates","createdAt","updatedAt"] )
+#set( $allowedAggFields = ["createdAt","updatedAt","id","name","coordinates"] )
+#if( $util.authType() == "API Key Authorization" )
+$util.unauthorized()
+#end
+#if( $util.authType() == "IAM Authorization" )
+  #set( $adminRoles = ["us-east-1_ElczMtkkC_Full-access/CognitoIdentityCredentials","us-east-1_ElczMtkkC_Manage-only/CognitoIdentityCredentials"] )
+  #foreach( $adminRole in $adminRoles )
+    #if( $ctx.identity.userArn.contains($adminRole) && $ctx.identity.userArn != $ctx.stash.authRole && $ctx.identity.userArn != $ctx.stash.unauthRole )
+      #set( $allowedAggFields = $totalFields )
+      $util.qr($ctx.stash.put("allowedAggFields", $allowedAggFields))
+      #return($util.toJson({}))
+    #end
+  #end
+$util.unauthorized()
+#end
+#if( $util.authType() == "User Pool Authorization" )
+  #set( $allowedAggFields = $totalFields )
+  #set( $isAuthorized = true )
+#end
+$util.qr($ctx.stash.put("allowedAggFields", $allowedAggFields))
+#if( !$isAuthorized && $util.isNull($ctx.stash.authFilter) )
+$util.unauthorized()
+#end
+$util.toJson({"version":"2018-05-29","payload":{}})
+## [End] Authorization Steps. **

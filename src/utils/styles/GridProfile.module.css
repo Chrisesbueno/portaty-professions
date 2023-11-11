@@ -1,0 +1,19 @@
+
+.container {
+    flex: 1;
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: space-between;
+}
+
+.column {
+    align-items: center;
+    justify-content: center;
+    height: 110px;
+    width: 33%;
+    /* height: ; */
+    margin-bottom: 1%;
+    /* padding: 10px; */
+    border-radius: 2px;
+    border: 0.5px solid #5E2129;
+}
