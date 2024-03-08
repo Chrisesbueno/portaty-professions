@@ -44,7 +44,6 @@ const useImageStorage = () => {
 
   // descargas de imagenes de otros usuarios
   const downloadImageOther = async (key, level, identityId) => {
-    // if (key === "" || level === "" || identityId === "") return console.log("CAMPOS VACIOS IMAGEN OTHER");
     try {
       const url = await Storage.get(key, {
         level: level,

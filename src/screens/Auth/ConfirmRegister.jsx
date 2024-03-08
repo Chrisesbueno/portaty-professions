@@ -8,6 +8,7 @@ import {
   Text,
   TouchableOpacity,
   Button,
+  ActivityIndicator,
 } from "react-native";
 import React, { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
@@ -27,25 +28,25 @@ const ConfirmRegister = ({ navigation, route }) => {
   const [loading, setLoading] = useState(false); // 10 minutos
   const [visible, setVisible] = useState(false);
   const [error, setError] = useState("");
-  const { email } = route.params;
   const [codeInputs, setCodeInputs] = useRecoilState(codeFields);
   const global = require("@/utils/styles/global.js");
+  const { params } = route;
   const { control, handleSubmit } = useForm({
     defaultValues: {
-      email: email,
+      email: params?.email,
     },
   });
 
-  const onHandleConfirm = async (data) => {
-    const { email } = data;
+  const onHandleConfirm = async () => {
+    const { email } = params;
     setLoading(true);
     try {
       await Auth.confirmSignUp(email, codeInputs);
       setVisible(true);
       setCodeInputs("");
     } catch (error) {
-      setError(`Error al confirmar usuario: ${error}`)
-      setVisible(true)
+      setError(`Error al confirmar usuario: ${error}`);
+      setVisible(true);
     }
     setLoading(false);
   };
@@ -84,7 +85,7 @@ const ConfirmRegister = ({ navigation, route }) => {
               {es.authentication.account.entercode.title}
             </Text>
             <Text style={{ fontFamily: "light", fontSize: 16 }}>
-              Enviamos el codigo de confirmacion a {email}
+              Enviamos el codigo de confirmacion a {params?.email}
             </Text>
             <Text
               style={[{ fontSize: 16, fontFamily: "light", marginTop: 10 }]}
@@ -97,7 +98,7 @@ const ConfirmRegister = ({ navigation, route }) => {
               <Text style={styles.titleAlert}>
                 {es.authentication.account.code.title}
               </Text>
-              <TouchableOpacity onPress={() => console.log("Aun no esta")}>
+              <TouchableOpacity>
                 <Text style={styles.subtitleAlert}>
                   {es.authentication.account.code.subtitle}
                 </Text>
@@ -108,13 +109,13 @@ const ConfirmRegister = ({ navigation, route }) => {
             <CustomButton
               text={
                 loading ? (
-                  <ActivityIndicator color={`#ffffff`} />
+                  <ActivityIndicator color={`#1f1f1f`} />
                 ) : (
                   es.authentication.account.button
                 )
               }
               handlePress={handleSubmit(onHandleConfirm)}
-              textStyles={[styles.textContinue, global.white]}
+              textStyles={[styles.textContinue, global.black]}
               buttonStyles={[styles.continue, global.mainBgColor]}
             />
           </View>
@@ -122,9 +123,9 @@ const ConfirmRegister = ({ navigation, route }) => {
             text={error ? error : "Usuario registrado exitosamente"}
             close={() => {
               if (error) {
-                setVisible(false)
+                setVisible(false);
               } else {
-                CloseModal()
+                CloseModal();
               }
             }}
             open={visible}

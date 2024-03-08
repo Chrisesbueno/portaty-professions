@@ -23,23 +23,21 @@ import * as queries from "@/graphql/CustomQueries/Favorites";
 const SearchOut = ({ route }) => {
   const global = require("@/utils/styles/global.js");
   const { input } = route.params;
+  // console.log(input)
   const [moreItems, setMoreItems] = useState(1);
   const [items, setItems] = useState([]);
   const [totalData, setTotalData] = useState(2);
   const [totalLimit, setTotalLimit] = useState(1);
   const [modalVisible, setModalVisible] = useState(false);
+  const [notFound, setNotFound] = useState(false);
   const [statusFilter, setStatusFilter] = useState(false);
   const [filterRadio, setFilterRadio] = useState(1);
   let number = 26 * moreItems;
   const location = useRecoilValue(mapUser);
 
   const getData = async () => {
-    console.log({
-      lat: location.latitude,
-      lon: location.longitude,
-    });
-    const api = "api-professions-gateway";
-    const path = "/searchBusinessByDistance";
+    const api = "api-opense";
+    const path = "/search/input";
     const params = {
       headers: {}, // OPTIONAL
       queryStringParameters: {
@@ -47,7 +45,7 @@ const SearchOut = ({ route }) => {
           lat: location.latitude,
           lon: location.longitude,
         }),
-        km: 2,
+        km: filterRadio,
         from: 0,
         text: input.trim(),
         limit: number,
@@ -57,44 +55,16 @@ const SearchOut = ({ route }) => {
       const response = await API.get(api, path, params);
       setTotalData(response.total);
       setTotalLimit(response.limit);
-      // let newItems = [];
       let newRenderItems = [];
       const long = 26;
-      // const { attributes } = await Auth.currentAuthenticatedUser();
-
-      // for (let i = 0; i < response.items.length; i += 1) {
-      //   try {
-      //     let result = await API.graphql({
-      //       query: queries.favoritesByBusinessID,
-      //       authMode: "AMAZON_COGNITO_USER_POOLS",
-      //       variables: {
-      //         businessID: response.items[i].id,
-      //         userID: { eq: attributes["custom:userTableID"] },
-      //       },
-      //     });
-
-      //     if (result.data.favoritesByBusinessID.items.length !== 0) {
-      //       newItems.push({
-      //         favorite: result.data.favoritesByBusinessID.items[0].id,
-      //         item: response.items[i],
-      //       });
-      //     } else {
-      //       newItems.push({
-      //         favorite: "",
-      //         item: response.items[i],
-      //       });
-      //     }
-      //   } catch (error) {
-      //     return;
-      //   }
-      // }
       for (let i = 0; i < response.items.length; i += long) {
         let cut = response.items.slice(i, i + long);
         newRenderItems.push(cut);
       }
       return setItems(newRenderItems);
     } catch (error) {
-      return console.log(error);
+      console.log("Error: ", error);
+      setNotFound(true);
     }
   };
   const getFilterData = async () => {
@@ -121,7 +91,7 @@ const SearchOut = ({ route }) => {
               alignItems: "center",
             }}
           >
-            <Text style={{ fontFamily: "thinItalic", fontSize: 14 }}>
+            <Text style={{ fontFamily: "regular", fontSize: 14 }}>
               Tienes {totalData} de {input.trim()} cerca de ti
             </Text>
             <View style={{ flexDirection: "row", alignItems: "center" }}>
@@ -135,8 +105,8 @@ const SearchOut = ({ route }) => {
               />
               <Text
                 style={{
-                  fontSize: 14,
-                  fontFamily: "thinItalic",
+                  fontSize: 13,
+                  fontFamily: "lightItalic",
                 }}
               >
                 Filtrar
@@ -174,9 +144,9 @@ const SearchOut = ({ route }) => {
                     maximumValue={100}
                     onValueChange={(e) => setFilterRadio(e)}
                     step={1}
-                    minimumTrackTintColor="#5E2129"
+                    minimumTrackTintColor="#fb8500"
                     maximumTrackTintColor="#1f1f1f"
-                    thumbTintColor="#5E2129"
+                    thumbTintColor="#fb8500"
                     value={filterRadio}
                   />
                   <Text
@@ -186,13 +156,15 @@ const SearchOut = ({ route }) => {
                 <View style={{ flex: 1 }}>
                   <TouchableOpacity
                     style={[
-                      global.mainBgColor,
+                      global.bgYellow,
                       {
                         borderRadius: 8,
                         justifyContent: "center",
                         alignItems: "center",
                         height: 49,
                         marginTop: 80,
+                        borderWidth: 0.7,
+                        borderColor: "#1f1f1f",
                       },
                     ]}
                     onPress={() => {
@@ -202,8 +174,8 @@ const SearchOut = ({ route }) => {
                   >
                     <Text
                       style={[
-                        global.white,
-                        { fontFamily: "medium", fontSize: 14 },
+                        global.black,
+                        { fontFamily: "bold", fontSize: 14 },
                       ]}
                     >
                       {`Buscar`}
@@ -221,7 +193,7 @@ const SearchOut = ({ route }) => {
               global.bgWhite,
             ]}
           >
-            <ActivityIndicator size="large" color="#5E2129" />
+            <ActivityIndicator size="large" color="#ffb703" />
           </View>
         ) : (
           items !== 0 && (
@@ -242,10 +214,10 @@ const SearchOut = ({ route }) => {
                   }}
                 >
                   {totalData > totalLimit && (
-                    <ActivityIndicator size="large" color="#5E2129" />
+                    <ActivityIndicator size="large" color="#ffb703" />
                   )}
                   {totalData === totalLimit && (
-                    <Text style={{ fontFamily: "light", fontSize: 14 }}>
+                    <Text style={{ fontFamily: "regular", fontSize: 14 }}>
                       No hay mas resultados por: "{input.trim()}"
                     </Text>
                   )}
@@ -260,7 +232,7 @@ const SearchOut = ({ route }) => {
         )}
       </View>
     );
-  if (totalData === 0) {
+  if (totalData === 0 || notFound) {
     return (
       <View
         style={[
@@ -271,12 +243,13 @@ const SearchOut = ({ route }) => {
         <Text
           style={[
             {
-              fontFamily: "light",
-              fontSize: 16,
+              fontFamily: "regular",
+              fontSize: 15,
               textAlign: "center",
               marginBottom: 60,
+              width: 330,
             },
-            global.midGray,
+            global.black,
           ]}
         >
           No se encuentran resultados por: "{input.trim()}"
@@ -291,7 +264,7 @@ const SearchOut = ({ route }) => {
           global.bgWhite,
         ]}
       >
-        <ActivityIndicator size="large" color="#5E2129" />
+        <ActivityIndicator size="large" color="#ffb703" />
       </View>
     );
   }

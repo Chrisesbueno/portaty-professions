@@ -34,6 +34,7 @@
   padding: 20px;
   width: 300px;
   height: 400px;
+  border: 1px solid #1f1f1f;
 }
 .modalTextSelect {
   font-family: "light";
@@ -124,4 +125,36 @@
   position: relative;
   left: -7.7%;
   bottom: 10%;
+}
+.modalContainerCountries {
+  flex: 1;
+  justify-content: center;
+  align-items: center;
+  background-color: rgba(52, 52, 52, 0.5);
+}
+.modalTopCountries {
+  flex-direction: row;
+  align-items: center;
+  margin-bottom: 20px;
+}
+.modalTextCountries {
+  /* font-weight: 600; */
+  font-family: "regular";
+  font-size: 14px;
+  margin-left: 5px;
+}
+.modalContentCountries {
+  background-color: white;
+  border-radius: 12px;
+  /* padding: 5px; */
+  border: 1px solid #1f1f1f;
+  width: 220px;
+  height: 400px;
+}
+.modalTextSelectCountries {
+  font-family: "light";
+  /* font-weight: 500; */
+  font-size: 14px;
+  color: #8c9199;
+  /* text-transform: capitalize; */
 }

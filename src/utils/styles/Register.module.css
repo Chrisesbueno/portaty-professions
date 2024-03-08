@@ -9,36 +9,37 @@
   flex: 1;
 }
 .title {
-  font-family: "name";
+  font-family: "bold";
   margin: 15% 10px 0%;
   text-align: center;
-  font-size: 42px;
-  color: #fb8500;
+  font-size: 36px;
+  color: #ffb703;
 }
 .inputContainer {
   flex: 1;
   flex-direction: row;
   justify-content: space-between;
   align-items: center;
-  background-color: #fafafa;
+  /* background-color: #fafafa; */
   border: none;
   padding: 11px 10px 11px 0px;
   border-radius: 8px;
   margin: 3px 0px 10px;
+  border: 1px solid #1f1f1f;
 }
 .labelInput {
-  font-family: "regular";
+  font-family: "bold";
   font-size: 14px;
-  color: #404040;
+  color: #1f1f1f;
 }
 .textInput {
   flex: 1;
-  font-family: "light";
+  font-family: "regular";
   margin-left: 10px;
-  color: #fb8500;
+  color: #1f1f1f;
 }
 .errorInput {
-  font-family: "light";
+  font-family: "bold";
   color: red;
   font-size: 12px;
   position: relative;
@@ -54,9 +55,16 @@
 .placeholder {
   flex: 1;
   margin-left: 10px;
-  color: #8c9199cb;
+  color: #1f1f1f;
   font-size: 12px;
   font-family: "light";
+}
+.placeholderGender {
+  flex: 1;
+  margin-left: 10px;
+  color: #1f1f1f;
+  font-size: 12px;
+  font-family: "regular";
 }
 .security {
   position: relative;
@@ -68,13 +76,14 @@
   width: 100%;
   padding: 20px;
   height: 60px;
-  background-color: #ffa424;
-  border-radius: 16px;
+  /* background-color: #ffa424; */
+  border-radius: 8px;
+  border: 1px solid #1f1f1f;
 }
 
 .textContinue {
   text-align: center;
-  font-family: "medium";
-  color: white;
-  font-size: 14px;
+  font-family: "bold";
+  /* color: white; */
+  font-size: 16px;
 }

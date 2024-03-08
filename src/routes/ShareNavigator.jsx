@@ -9,7 +9,7 @@ import CustomQR from "@/components/CustomQR";
 const ShareNavigator = () => {
   const Stack = createNativeStackNavigator();
   return (
-    <Stack.Navigator initialRouteName={`ShareListPage`}>
+    <Stack.Navigator initialRouteName={`SharePage`}>
       <Stack.Screen
           name="ShareListPage"
           component={ShareListPage}

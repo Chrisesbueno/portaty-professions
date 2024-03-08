@@ -1,7 +1,7 @@
 import { View, Text, TouchableOpacity, Image, TextInput } from "react-native";
 import React, { useEffect, useState } from "react";
 import { useRecoilState } from "recoil";
-import { favoriteSelection, favoritesState } from "@/atoms";
+import { favoriteSelection, favoritesState, inputFavoritesSearch } from "@/atoms";
 import { Auth, API, Storage } from "aws-amplify";
 import * as queries from "@/graphql/CustomQueries/Favorites";
 import * as customFavorites from "@/graphql/CustomMutations/Favorites";
@@ -14,6 +14,9 @@ const FavoriteHeader = ({ multiple = false }) => {
   const [statusFavorite, setStatusFavorite] = useRecoilState(favoritesState);
   const [favoritesList, setFavoritesList] = useState([]);
   const isThere = favoritesList.some((obj) => obj.id === selection[0] && obj.position > 0)
+  const [inputFavorites, setInputFavorites] =
+  useRecoilState(inputFavoritesSearch);
+
   const fetchFavorites = async () => {
     const { attributes } = await Auth.currentAuthenticatedUser();
     const result = await API.graphql({
@@ -23,11 +26,9 @@ const FavoriteHeader = ({ multiple = false }) => {
         email: attributes.email,
       },
     });
-    console.log(result.data.userByEmail.items[0].favorites.items);
     setFavoritesList(result.data.userByEmail.items[0].favorites.items);
   };
   function handleKeyPress() {
-    console.log("You pressed a key.");
   }
   const onDeleteFavorite = async () => {
     try {
@@ -40,20 +41,18 @@ const FavoriteHeader = ({ multiple = false }) => {
         },
         authMode: "AMAZON_COGNITO_USER_POOLS",
       });
-      console.log(deleteFavorite);
+      setInputFavorites("")
     } catch (error) {
       console.log(error);
     }
   };
   const onAnchorFavorite = async () => {
 
-    console.log(selection[0])
     let newPosition = 1;
     
     while (favoritesList.some((obj) => obj.position === newPosition)) {
       newPosition += 1;
     }
-    console.log(newPosition);
     try {
     if (isThere) {
       const updateFavoritesTrue = await API.graphql({
@@ -66,7 +65,7 @@ const FavoriteHeader = ({ multiple = false }) => {
         },
         authMode: "AMAZON_COGNITO_USER_POOLS",
       });
-      console.log(updateFavoritesTrue);
+      setInputFavorites("")
     } else {
       const updateFavoritesFalse = await API.graphql({
         query: customFavorites.updateFavorites,
@@ -78,7 +77,6 @@ const FavoriteHeader = ({ multiple = false }) => {
         },
         authMode: "AMAZON_COGNITO_USER_POOLS",
       });
-      console.log(updateFavoritesFalse);
     }
 
     } catch (error) {
@@ -97,7 +95,7 @@ const FavoriteHeader = ({ multiple = false }) => {
           },
           authMode: "AMAZON_COGNITO_USER_POOLS",
         });
-        console.log(deleteFavorite);
+        setInputFavorites("")
       } catch (error) {
         console.log(error);
       }
@@ -105,8 +103,6 @@ const FavoriteHeader = ({ multiple = false }) => {
   };
   useEffect(() => {
     fetchFavorites();
-    console.log('yes', isThere)
-
   }, []);
 
   return (

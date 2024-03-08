@@ -14,17 +14,18 @@
   text-align: center;
   width: 100%;
   padding: 20px;
-  height: 60px;
-  background-color: #ffa424;
-  border-radius: 16px;
+  height: 65px;
+  /* background-color: #ffa424; */
+  border: 1px solid #1f1f1f;
+  border-radius: 8px;
 }
 
 .textContinue {
   text-align: center;
-  font-family: 'medium';
+  font-family: 'bold';
   /* font-weight: 700; */
-  color: white;
-  font-size: 14px;
+  color: #1f1f1f;
+  font-size: 18px;
 }
 
 .textContainer {
@@ -32,23 +33,24 @@
   justify-content: center;
 }
 .title {
-  font-family: "name";
-  margin: 15% 10px 0%;
+  font-family: "regular";
+  margin: 15% 10px 10%;
   text-align: center;
-  font-size: 42px;
+  font-size: 32px;
 }
 
 .titleAlert {
   text-align: center;
-  font-family: 'thin';
-  font-size: 20px;
+  font-family: 'regular';
+  font-size: 14px;
+  margin-top: 20px;
   margin-bottom: 3px;
 }
 .subtitleAlert {
-  font-family: 'medium';
+  font-family: 'bold';
   text-align: center;
-  font-size: 15px;
+  font-size: 14px;
   margin-left: 5px;
-  color: #fb8500;
+  color: #1f1f1f;
 
 }

@@ -11,32 +11,33 @@
   flex-direction: row;
   justify-content: space-between;
   align-items: center;
-  background-color: #fafafa;
+  background-color: #fff;
   border: none;
   padding: 11px 10px 11px 0px;
   border-radius: 8px;
   margin: 3px 0px 10px;
+  border: 1px solid #1f1f1f;
 }
 .labelInput {
-  font-family: "regular";
+  font-family: "bold";
   font-size: 14px;
-  color: #404040;
+  color: #1f1f1f;
 }
 .textInput {
   flex: 1;
-  font-family: "light";
+  font-family: "medium";
   margin-left: 10px;
-  color: #fb8500;
+  color: #1f1f1f;
 }
 .errorInput {
-  font-family: "light";
+  font-family: "bold";
   color: red;
   font-size: 12px;
   position: relative;
   top: -10px;
 }
 .errorInputMain {
-  font-family: "light";
+  font-family: "bold";
   color: red;
   font-size: 14px;
   position: relative;
@@ -45,9 +46,9 @@
 .placeholder {
   flex: 1;
   margin-left: 10px;
-  color: #8c9199cb;
+  color: #1f1f1f;
   font-size: 12px;
-  font-family: "light";
+  font-family: "medium";
 }
 .security {
   position: relative;
@@ -63,15 +64,16 @@
   padding: 20px;
   height: 60px;
   background-color: #ffa424;
-  border-radius: 16px;
+  border-radius: 12px;
+  border: 1px solid #1f1f1f;
 }
 
 .textContinue {
   text-align: center;
-  font-family: 'medium';
+  font-family: 'bold';
   /* font-weight: 700; */
-  color: white;
-  font-size: 14px;
+  color: #1f1f1f;
+  font-size: 18px;
 }
 
 
@@ -84,11 +86,11 @@
 }
 
 .title {
-  font-family: "name";
+  font-family: "regular";
   margin: 15% 10px 10%;
   text-align: center;
-  font-size: 42px;
-  color: #fb8500;
+  font-size: 32px;
+  color: #1f1f1f;
 }
 .enterCode {
   margin-bottom: 15px;

@@ -12,9 +12,10 @@
   align-items: center;
   padding: 10px 10px;
   border-radius: 12px;
+  border: 0.7px solid #1f1f1f;
 }
 .input {
-  font-family: 'light';
+  font-family: 'regular';
   flex: 1;
   padding: 5px;
 }

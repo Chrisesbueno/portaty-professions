@@ -10,7 +10,7 @@
 .columnGrid,
 .columnList {
   /* align-items: center; */
-  border: 0.5px solid #5e2129;
+  border: 0.7px solid #1f1f1f;
   position: relative;
   z-index: 2;
 }
@@ -57,7 +57,7 @@
 }
 .text {
     font-size: 13px;
-    font-family: 'lightItalic';
+    font-family: 'regular';
     padding: 5px 0;
 }
 
@@ -68,13 +68,14 @@
   width: 250px;
   padding: 20px;
   height: 60px;
-  background-color: #ffa424;
-  border-radius: 16px;
+  border: 0.7px solid #1f1f1f;
+  /* background-color: #ffa424; */
+  border-radius: 8px;
 }
 
 .textSearch {
   text-align: center;
-  font-family: "medium";
-  color: white;
+  font-family: "bold";
+  /* color: white; */
   font-size: 15px;
 }

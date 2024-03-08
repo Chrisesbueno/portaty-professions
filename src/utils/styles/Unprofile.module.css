@@ -20,7 +20,7 @@
   .image {
     height: 150px;
     width: 150px;
-    border: 2px solid #ffa424;
+    border: 1px solid #1f1f1f;
     border-radius: 500px;
   }
   
@@ -43,7 +43,7 @@
   }
   .line {
     width: 150%;
-    height: 0.8px;
+    height: 0.5px;
   }
   
   .containerSelect {
@@ -60,27 +60,30 @@
     margin-bottom: 10px;
   }
   .iconLeft {
+    height: 58px;
+    width: 58px;
     padding: 14px;
     align-items: center;
     justify-content: center;
     border-radius: 12px;
     margin-right: 10px;
+    border: 0.7px solid #1f1f1f;
   }
   .textContainerSelect {
     width: 68%;
   }
   .textTitleSelect {
     /* font-weight: 100; */
-    font-family: 'light';
-    font-size: 18px;
+    font-family: 'medium';
+    font-size: 15px;
   }
   .textSubtitleSelect {
-    font-family: 'extralight';
+    font-family: 'light';
     /* font-weight: 400; */
     font-size: 12px;
   }
   .titleSettings {
-    font-family: 'thinItalic';
+    font-family: 'lightItalic';
     /* font-style: italic; */
     padding: 20px 20px 0px;
     /* font-weight: 100; */
@@ -104,4 +107,36 @@
     font-family: "medium";
     color: white;
     font-size: 15px;
+  }
+
+  .modalContainer {
+    flex: 1;
+    justify-content: center;
+    align-items: center;
+    background-color: rgba(52, 52, 52, 0.5);
+  }
+  .modalTop {
+    flex-direction: row;
+    align-items: center;
+    margin-bottom: 20px;
+  }
+  .modalText {
+    /* font-weight: 600; */
+    font-family: "regular";
+    font-size: 14px;
+    margin-left: 5px;
+  }
+  .modalContent {
+    background-color: white;
+    border-radius: 12px;
+    padding: 20px;
+    width: 320px;
+    /* height: 450px; */
+  }
+  .modalTextSelect {
+    font-family: "light";
+    /* font-weight: 500; */
+    font-size: 14px;
+    color: #8c9199;
+    text-transform: capitalize;
   }

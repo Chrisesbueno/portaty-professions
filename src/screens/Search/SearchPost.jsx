@@ -8,41 +8,96 @@ import {
   Share,
   Linking,
   Platform,
+  FlatList,
+  TouchableWithoutFeedback,
+  Modal,
+  Pressable,
 } from "react-native";
-import React, { useState, useEffect, useLayoutEffect } from "react";
+import React, { useState, useEffect } from "react";
 import * as customSearch from "@/graphql/CustomQueries/Search";
-import CustomSelect from "@/components/CustomSelect";
-import styles from "@/utils/styles/Unprofile.module.css";
+import styles from "@/utils/styles/SearchPost.module.css";
 import {
-  FontAwesome5,
   MaterialCommunityIcons,
   AntDesign,
-  FontAwesome,
-  Foundation,
   EvilIcons,
   Feather,
-  Fontisto,
+  Entypo,
+  MaterialIcons,
 } from "@expo/vector-icons";
-import { Auth, API, Storage } from "aws-amplify";
+import { Auth, API, Analytics } from "aws-amplify";
 import * as queries from "@/graphql/CustomQueries/Favorites";
 import * as customFavorites from "@/graphql/CustomMutations/Favorites";
 import MapView, { Marker } from "react-native-maps";
 import SkeletonExample from "@/components/SkeletonExample";
 // recoil
-import { useRecoilValue } from "recoil";
-import { userAuthenticated } from "@/atoms/index";
-import Swiper from "react-native-swiper";
+import { useRecoilState, useRecoilValue } from "recoil";
+import { updateListFavorites, userAuthenticated, mapUser } from "@/atoms/index";
+import * as FileSystem from "expo-file-system";
+import { StorageAccessFramework } from "expo-file-system";
+import { useRef } from "react";
+import ModalAlert from "@/components/ModalAlert";
+// storage
+import AsyncStorage from "@react-native-async-storage/async-storage";
+// location
+import * as Location from "expo-location";
+
 const SearchPost = ({ route, navigation }) => {
   const userAuth = useRecoilValue(userAuthenticated);
+  const userLocation = useRecoilValue(mapUser);
   const [post, setPost] = useState(null);
-  const [storageImages, setStorageImages] = useState([]);
-  const [currentIndex, setCurrentIndex] = useState(0);
   const [save, setSave] = useState("");
+  const [open, setOpen] = useState(false);
+  const [numberFavorite, setNumberFavorite] = useState(0);
+  const [dimensionsImages, setDimensionsImages] = useState(0);
   const [showAgg, setShowAgg] = useState(false);
+  const [visible, setVisible] = useState(false);
+  const [imageView, setImageView] = useState(null);
+  const [listUpdate, setListUpdate] = useRecoilState(updateListFavorites);
   const global = require("@/utils/styles/global.js");
   const {
-    data: { item, image },
+    data: { item, images },
   } = route.params;
+  const getPdf = async () => {
+    const permissions =
+      await StorageAccessFramework.requestDirectoryPermissionsAsync();
+    if (!permissions.granted) {
+      return;
+    }
+
+    const api = "api-professions-gateway";
+    const path = "/documentqr";
+    const params = {
+      headers: {},
+      queryStringParameters: {
+        path: `https://www.portaty.com/share/business?id=${item.id}`,
+      },
+    };
+
+    try {
+      const response = await API.get(api, path, params);
+      await StorageAccessFramework.createFileAsync(
+        permissions.directoryUri,
+        "qr.pdf",
+        "application/pdf"
+      )
+        .then(async (uri) => {
+          await FileSystem.writeAsStringAsync(uri, response["pdf_base64"], {
+            encoding: FileSystem.EncodingType.Base64,
+          });
+        })
+        .catch((e) => {
+          console.log(e);
+        });
+    } catch (error) {
+      console.log("Error en pdf: ", error.message);
+    }
+  };
+
+  const onViewRef = useRef((viewableItems) => {
+    if (viewableItems.changed[0].isViewable)
+      setDimensionsImages(viewableItems.changed[0].item.key);
+  });
+  const viewConfigRef = useRef({ viewAreaCoveragePercentThreshold: 20 });
 
   const onCreateFavorite = async () => {
     try {
@@ -58,8 +113,9 @@ const SearchPost = ({ route, navigation }) => {
         },
         authMode: "AMAZON_COGNITO_USER_POOLS",
       });
-      console.log(favorites?.data?.createFavorites?.id);
       setSave(favorites?.data?.createFavorites?.id);
+      setNumberFavorite(post?.favorites?.items?.length + 1);
+      setListUpdate(!listUpdate);
     } catch (error) {
       console.log("ERRO AL CARGAR UN FAVORITO: ", error);
     }
@@ -76,6 +132,7 @@ const SearchPost = ({ route, navigation }) => {
       authMode: "AMAZON_COGNITO_USER_POOLS",
     });
     setSave("");
+    setNumberFavorite(0);
   };
 
   const fetchData = async () => {
@@ -95,7 +152,7 @@ const SearchPost = ({ route, navigation }) => {
       } else {
         setShowAgg(true);
       }
-      setPost(business?.data?.getBusiness);
+      return setPost(business?.data?.getBusiness);
     } catch (error) {
       console.log(error);
     }
@@ -142,36 +199,65 @@ const SearchPost = ({ route, navigation }) => {
     Linking.openURL(url);
   };
 
-  const AllImages = async () => {
+  const registerViewBusiness = async (userID, businessID) => {
     try {
-      const result = await Storage.list(`business/${item.id}/extras/`, {
-        level: "protected",
-        identityId: item.identityID,
-        pageSize: 10,
-      });
-      const urls = await Promise.all(
-        result.results.map((item) => 
-          Storage.get(item.key, { level: "protected" })
-            .then((url) => url)
-            .catch((err) => console.log(err))
-        )
+      // Obtener informacuon de la ultima visualizacion del usuario guardada en Async Storage
+      const lastViewString = await AsyncStorage.getItem(`lastView_${userID}`);
+      const lastViewInfo = JSON.parse(lastViewString);
+
+      // Si hay una última visualización registrada y ocurrió hace menos de 24 horas, no registra la nueva visualización
+      if (
+        lastViewInfo &&
+        new Date() - new Date(lastViewInfo.timestamp) < 24 * 60 * 60 * 1000 &&
+        lastViewInfo.businessID === businessID
+      ) {
+        console.log(
+          "Visualización no registrada: ya se registró una visualización del mismo negocio en las últimas 24 horas"
+        );
+        return;
+      }
+
+      // De no haber visualizacion Registrarla en analytics
+      const addressArr = await Location.reverseGeocodeAsync(userLocation);
+      const { country, city } = addressArr[0];
+      const params = {
+        eventname: "user_viewed_business",
+        userid: userID,
+        birthdate: userAuth?.attributes?.birthdate,
+        gender: "Male",
+        country,
+        city,
+        businessid: businessID,
+      };
+      Analytics.record(
+        {
+          data: params,
+          streamName: "portaty-app-firehose",
+        },
+        "AWSKinesisFirehose"
       );
-      setStorageImages([image, ...urls])
+      // Almacena la información de la última visualización en AsyncStorage
+      const currentViewInfo = {
+        businessID: businessID,
+        timestamp: new Date().toISOString(),
+      };
+      await AsyncStorage.setItem(
+        `lastView_${userID}`,
+        JSON.stringify(currentViewInfo)
+      );
+
+      console.log("Visualización registrada correctamente");
     } catch (error) {
-      console.log(error);
+      console.log("Error al registrar analitica: ", error);
     }
   };
-
-  useLayoutEffect(() => {
-    fetchFavorite();
+  useEffect(() => {
+    if (!save) fetchFavorite();
     fetchData();
-    AllImages()
-    console.log(storageImages)
+    registerViewBusiness(userAuth?.attributes["custom:userTableID"], item.id);
   }, []);
 
-
-
-  if (!post || storageImages.length === 0) return <SkeletonExample />;
+  if (!post) return <SkeletonExample />;
   return (
     <View
       style={[
@@ -186,129 +272,219 @@ const SearchPost = ({ route, navigation }) => {
           style={[
             {
               flex: 1,
-              paddingHorizontal: 20,
               alignItems: "center",
               justifyContent: "center",
+              alignSelf: "center",
+              width: 320,
+              height: 250,
+              position: "relative",
             },
           ]}
         >
-          {storageImages.length !== 0 && (
-            <Swiper
-              style={{
-                // width: 340,
-                height: 260,
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-              showsButtons={true}
-              loop={false}
-              onIndexChanged={(index) => setCurrentIndex(index)}
-              onMomentumScrollEnd={(e, state) => setCurrentIndex(state.index)}
-              nextButton={
-                <Text
-                  style={{
-                    color:
-                      currentIndex < storageImages.length - 1
-                        ? "#fb8500"
-                        : "transparent",
-                    fontSize: 50,
-                  }}
-                >
-                  ›
-                </Text>
-              }
-              prevButton={
-                <Text
-                  style={{
-                    color: currentIndex > 0 ? "#fb8500" : "transparent",
-                    fontSize: 50,
-                  }}
-                >
-                  ‹
-                </Text>
-              }
-              activeDotColor="#000"
-            >
-              {storageImages.map((item, index) => (
-                <View
-                  style={{
-                    width: 310,
-                    height: 230,
-                    borderRadius: 5,
-                    borderColor: "#efeded",
-                    borderWidth: 1,
-                    overflow: "hidden",
-                    padding: 10,
-                    marginBottom: 20,
-                    marginTop: 20,
-                    position: "relative",
-                  }}
-                  key={index}
-                >
-                  <Image
-                    style={{
-                      width: "100%",
-                      height: "100%",
-                      resizeMode: "cover",
-                      borderRadius: 5,
-                      backgroundColor: "#fff",
-                    }}
-                    source={{ uri: item }}
-                  />
-                </View>
-              ))}
-            </Swiper>
-          ) 
-          }
-        </View>
-        {showAgg && (
-          <View
-            style={{
-              // flex: 1,
-              flexDirection: "row",
-              alignItems: "center",
-              justifyContent: "space-between",
-              padding: 20,
-            }}
-          >
-            <View
-              style={{
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-            >
-              <Text style={{ fontSize: 26, fontFamily: "thin" }}>
-                {post?.favorites?.items?.length}
-              </Text>
-              <Text style={{ fontSize: 22, fontFamily: "thin" }}>
-                Favoritos
-              </Text>
-            </View>
-            <TouchableOpacity
-              style={[
-                save === "" ? global.mainBgColor : global.bgWhiteSmoke,
-                { padding: 10, borderRadius: 8 },
-              ]}
-              onPress={() => {
-                if (save === "") {
-                  onCreateFavorite();
-                } else {
-                  onDeleteFavorite();
-                }
-              }}
-            >
-              <Text
+          {images.length !== 1 &&
+            dimensionsImages + 1 > 1 &&
+            dimensionsImages <= 3 && (
+              <View
                 style={[
-                  { fontSize: 14, fontFamily: "thin" },
-                  save === "" ? global.white : global.black,
+                  global.mainBgColor,
+                  {
+                    width: 25,
+                    height: 25,
+                    position: "absolute",
+                    zIndex: 10,
+                    left: 0,
+                    top: "50%",
+                    opacity: 0.85,
+                    borderRadius: 5,
+                  },
                 ]}
               >
-                {save === "" ? "Agregar a favoritos" : "Eliminar de favoritos"}
+                <Entypo name="triangle-left" size={24} color="white" />
+              </View>
+            )}
+          {images.length !== 1 &&
+            dimensionsImages >= 0 &&
+            dimensionsImages < images.length - 1 && (
+              <View
+                style={[
+                  global.mainBgColor,
+                  {
+                    width: 25,
+                    height: 25,
+                    position: "absolute",
+                    zIndex: 10,
+                    top: "50%",
+                    right: 0,
+                    opacity: 0.85,
+                    borderRadius: 5,
+                  },
+                ]}
+              >
+                <Entypo name="triangle-right" size={24} color="white" />
+              </View>
+            )}
+          <FlatList
+            horizontal
+            data={images}
+            renderItem={({ item, index }) => (
+              <View
+                style={{
+                  flex: 1,
+                  width: 320,
+                  height: 250,
+                }}
+              >
+                <Image
+                  style={{
+                    width: "100%",
+                    height: "100%",
+                    resizeMode: "cover",
+                    borderRadius: 5,
+                    backgroundColor: "#fff",
+                    borderColor: "#1f1f1f",
+                    borderWidth: 0.7,
+                  }}
+                  source={{ uri: item.url }}
+                />
+                <TouchableOpacity
+                  style={[
+                    {
+                      flexDirection: "row",
+                      padding: 8,
+                      borderRadius: 5,
+                      opacity: 0.7,
+                      alignItems: "center",
+                      marginBottom: 5,
+                      position: "absolute",
+                      right: 0,
+                      borderColor: "#1f1f1f",
+                      borderWidth: 0.7,
+                    },
+                    global.bgYellow,
+                  ]}
+                  onPress={() => {
+                    setOpen(!open);
+                    setImageView(item);
+                  }}
+                >
+                  <Text
+                    style={[
+                      { fontFamily: "medium", fontSize: 15 },
+                      global.black,
+                    ]}
+                  >
+                    {item.key + 1}/{images.length}
+                  </Text>
+                  <MaterialCommunityIcons
+                    name="image-search-outline"
+                    size={18}
+                    color="#1f1f1f"
+                    style={{ marginLeft: 5 }}
+                  />
+                </TouchableOpacity>
+              </View>
+            )}
+            keyExtractor={(item, index) => index}
+            viewabilityConfig={viewConfigRef.current}
+            onViewableItemsChanged={onViewRef.current}
+          />
+        </View>
+        {showAgg && (
+          <View>
+            <View
+              style={{
+                // flex: 1,
+                flexDirection: "row",
+                alignItems: "center",
+                justifyContent: "space-between",
+                padding: 20,
+                paddingHorizontal: 100,
+              }}
+            >
+              <View
+                style={{
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <Text style={{ fontSize: 24, fontFamily: "medium" }}>
+                  {numberFavorite
+                    ? numberFavorite
+                    : post?.favorites?.items?.length}
+                </Text>
+                <Text style={{ fontSize: 20, fontFamily: "light" }}>
+                  Favoritos
+                </Text>
+              </View>
+              <TouchableOpacity
+                onPress={() => {
+                  if (save === "") {
+                    onCreateFavorite();
+                  } else {
+                    onDeleteFavorite();
+                  }
+                }}
+              >
+                {save === "" ? (
+                  <Image
+                    style={{
+                      width: 45,
+                      height: 45,
+                      resizeMode: "cover",
+                    }}
+                    source={require("@/utils/images/nofavorites.png")}
+                  />
+                ) : (
+                  <Image
+                    style={{
+                      width: 45,
+                      height: 45,
+                      resizeMode: "cover",
+                    }}
+                    source={require("@/utils/images/sifavorites.png")}
+                  />
+                )}
+              </TouchableOpacity>
+            </View>
+            <TouchableOpacity
+              style={{
+                alignSelf: "flex-end",
+                paddingHorizontal: 20,
+                paddingBottom: 5,
+                flexDirection: "row",
+                alignItems: "center",
+              }}
+              onPress={() => setVisible(true)}
+            >
+              <MaterialIcons name="report" size={22} color="black" />
+              <Text
+                style={[
+                  global.black,
+                  {
+                    fontFamily: "bold",
+                    fontSize: 12,
+                    // marginLeft: 2,
+                    // marginBottom: 3
+                  },
+                ]}
+              >
+                Reportar negocio
               </Text>
             </TouchableOpacity>
           </View>
         )}
-        <View style={[styles.line, global.bgWhiteSmoke]} />
+        <View
+          style={[
+            styles.line,
+            global.bgMidGray,
+            {
+              top: 10,
+              left: 0,
+              width: 500,
+              marginBottom: 20,
+            },
+          ]}
+        />
 
         <TouchableOpacity
           style={{
@@ -332,6 +508,8 @@ const SearchPost = ({ route, navigation }) => {
               borderRadius: 10,
               overflow: "hidden",
               marginBottom: 40,
+              borderColor: "#1f1f1f",
+              borderWidth: 0.7,
             }}
           >
             <MapView
@@ -364,6 +542,7 @@ const SearchPost = ({ route, navigation }) => {
             flexDirection: "row",
             justifyContent: "space-between",
             alignItems: "center",
+            marginTop: -50,
           }}
           onPress={onShare}
         >
@@ -376,17 +555,19 @@ const SearchPost = ({ route, navigation }) => {
                   borderRadius: 10,
                   alignItems: "center",
                   justifyContent: "center",
+                  borderColor: "#1f1f1f",
+                  borderWidth: 0.7,
                 },
-                global.mainBgColor,
+                global.bgYellow,
               ]}
             >
-              <EvilIcons name="share-google" size={25} color="white" />
+              <EvilIcons name="share-google" size={32} color="#1f1f1f" />
             </View>
             <View style={{ marginLeft: 10 }}>
-              <Text style={{ fontFamily: "light", fontSize: 16 }}>
+              <Text style={{ fontFamily: "medium", fontSize: 16 }}>
                 Compartir
               </Text>
-              <Text style={{ fontFamily: "thin", fontSize: 12, width: 150 }}>
+              <Text style={{ fontFamily: "light", fontSize: 12, width: 150 }}>
                 Compartelo con tus amigos y familiares
               </Text>
             </View>
@@ -400,7 +581,7 @@ const SearchPost = ({ route, navigation }) => {
             source={require("@/utils/images/arrow_right.png")}
           />
         </TouchableOpacity>
-        <TouchableOpacity
+        {/* <TouchableOpacity
           style={{
             padding: 20,
             flexDirection: "row",
@@ -408,12 +589,7 @@ const SearchPost = ({ route, navigation }) => {
             alignItems: "center",
             marginTop: -25,
           }}
-          onPress={() => {
-            navigation.navigate("ViewQR", {
-              id: `https://www.portaty.com/share/business?id=${item.id}`,
-              name: post?.name,
-            });
-          }}
+          onPress={getPdf}
         >
           <View style={{ flexDirection: "row", alignItems: "center" }}>
             <View
@@ -424,20 +600,20 @@ const SearchPost = ({ route, navigation }) => {
                   borderRadius: 10,
                   alignItems: "center",
                   justifyContent: "center",
+                  borderColor: "#1f1f1f",
+                  borderWidth: 0.7,
                 },
-                global.mainBgColor,
+                global.bgYellow,
               ]}
             >
-              <MaterialCommunityIcons
-                name="qrcode-scan"
-                size={25}
-                color="white"
-              />
+              <AntDesign name="qrcode" size={24} color="#1f1f1f" />
             </View>
             <View style={{ marginLeft: 10 }}>
-              <Text style={{ fontFamily: "light", fontSize: 16 }}>Ver QR</Text>
-              <Text style={{ fontFamily: "thin", fontSize: 12, width: 150 }}>
-                Compartelo en formato QR para pegarlo en donde quieras
+              <Text style={{ fontFamily: "medium", fontSize: 15 }}>
+                Descargar QR
+              </Text>
+              <Text style={{ fontFamily: "light", fontSize: 12, width: 150 }}>
+                Descarga el QR del negocio para pegarlo en donde quieras
               </Text>
             </View>
           </View>
@@ -449,7 +625,7 @@ const SearchPost = ({ route, navigation }) => {
             }}
             source={require("@/utils/images/arrow_right.png")}
           />
-        </TouchableOpacity>
+        </TouchableOpacity> */}
         <TouchableOpacity
           style={{
             padding: 20,
@@ -469,15 +645,17 @@ const SearchPost = ({ route, navigation }) => {
                   borderRadius: 10,
                   alignItems: "center",
                   justifyContent: "center",
+                  borderColor: "#1f1f1f",
+                  borderWidth: 0.7,
                 },
-                global.mainBgColor,
+                global.bgYellow,
               ]}
             >
-              <Feather name="phone-call" size={17} color="white" />
+              <Feather name="phone-call" size={20} color="#1f1f1f" />
             </View>
             <View style={{ marginLeft: 10 }}>
-              <Text style={{ fontFamily: "light", fontSize: 16 }}>Llamar</Text>
-              <Text style={{ fontFamily: "thin", fontSize: 12, width: 150 }}>
+              <Text style={{ fontFamily: "medium", fontSize: 15 }}>Llamar</Text>
+              <Text style={{ fontFamily: "light", fontSize: 12, width: 150 }}>
                 Contacta al negocio directamente
               </Text>
             </View>
@@ -492,10 +670,19 @@ const SearchPost = ({ route, navigation }) => {
           />
         </TouchableOpacity>
         <View style={{ marginBottom: 80 }}>
-          <Text style={{ fontSize: 22, fontFamily: "thinItalic", padding: 10 }}>
+          <Text style={{ fontSize: 22, fontFamily: "regular", padding: 10 }}>
             Datos
           </Text>
-          <View style={[styles.line, global.bgWhiteSmoke]} />
+          <View
+            style={[
+              styles.line,
+              global.bgMidGray,
+              {
+                width: 500,
+                left: 0,
+              },
+            ]}
+          />
           <View
             style={{
               flexDirection: "row",
@@ -508,20 +695,29 @@ const SearchPost = ({ route, navigation }) => {
               {/* <Foundation name="torso-business" size={22} color="#1f1f1f" /> */}
               <Text
                 style={[
-                  { fontFamily: "thinItalic", fontSize: 15 },
-                  global.midGray,
+                  { fontFamily: "lightItalic", fontSize: 13 },
+                  global.black,
                 ]}
               >
                 Razon social
               </Text>
             </View>
             <View style={{ flexDirection: "row", alignItems: "center" }}>
-              <Text style={[{ fontSize: 13, fontFamily: "lightItalic" }]}>
+              <Text style={[{ fontSize: 13, fontFamily: "regular" }]}>
                 {post?.name}
               </Text>
             </View>
           </View>
-          <View style={[styles.line, global.bgWhiteSmoke]} />
+          <View
+            style={[
+              styles.line,
+              global.bgMidGray,
+              {
+                width: 500,
+                left: 0,
+              },
+            ]}
+          />
           <View
             style={{
               flexDirection: "row",
@@ -534,20 +730,37 @@ const SearchPost = ({ route, navigation }) => {
               {/* <FontAwesome5 name="store" size={16} color="#1f1f1f" /> */}
               <Text
                 style={[
-                  { fontFamily: "thinItalic", fontSize: 15 },
-                  global.midGray,
+                  { fontFamily: "lightItalic", fontSize: 13 },
+                  global.black,
                 ]}
               >
                 Actividad laboral
               </Text>
             </View>
             <View style={{ flexDirection: "row", alignItems: "center" }}>
-              <Text style={[{ fontSize: 13, fontFamily: "lightItalic" }]}>
+              <Text
+                style={[
+                  {
+                    fontSize: 13,
+                    fontFamily: "regular",
+                    textTransform: "capitalize",
+                  },
+                ]}
+              >
                 {post?.activity}
               </Text>
             </View>
           </View>
-          <View style={[styles.line, global.bgWhiteSmoke]} />
+          <View
+            style={[
+              styles.line,
+              global.bgMidGray,
+              {
+                width: 500,
+                left: 0,
+              },
+            ]}
+          />
           <View
             style={{
               flexDirection: "row",
@@ -560,20 +773,20 @@ const SearchPost = ({ route, navigation }) => {
               {/* <FontAwesome name="phone" size={20} color="#1f1f1f" /> */}
               <Text
                 style={[
-                  { fontFamily: "thinItalic", fontSize: 15 },
-                  global.midGray,
+                  { fontFamily: "lightItalic", fontSize: 13 },
+                  global.black,
                 ]}
               >
                 Telefono
               </Text>
             </View>
             <View style={{ flexDirection: "row", alignItems: "center" }}>
-              <Text style={[{ fontSize: 13, fontFamily: "lightItalic" }]}>
+              <Text style={[{ fontSize: 13, fontFamily: "regular" }]}>
                 {post?.phone}
               </Text>
             </View>
           </View>
-          <View style={[styles.line, global.bgWhiteSmoke]} />
+          <View style={[styles.line, global.bgMidGray]} />
           <View
             style={{
               flexDirection: "row",
@@ -586,20 +799,20 @@ const SearchPost = ({ route, navigation }) => {
               {/* <FontAwesome name="whatsapp" size={22} color="#1f1f1f" /> */}
               <Text
                 style={[
-                  { fontFamily: "thinItalic", fontSize: 15 },
-                  global.midGray,
+                  { fontFamily: "lightItalic", fontSize: 13 },
+                  global.black,
                 ]}
               >
                 WhatsApp
               </Text>
             </View>
             <View style={{ flexDirection: "row", alignItems: "center" }}>
-              <Text style={[{ fontSize: 13, fontFamily: "lightItalic" }]}>
+              <Text style={[{ fontSize: 13, fontFamily: "regular" }]}>
                 {post?.whatsapp}
               </Text>
             </View>
           </View>
-          <View style={[styles.line, global.bgWhiteSmoke]} />
+          <View style={[styles.line, global.bgMidGray]} />
           <View
             style={{
               flexDirection: "row",
@@ -616,20 +829,20 @@ const SearchPost = ({ route, navigation }) => {
               /> */}
               <Text
                 style={[
-                  { fontFamily: "thinItalic", fontSize: 15 },
-                  global.midGray,
+                  { fontFamily: "lightItalic", fontSize: 13 },
+                  global.black,
                 ]}
               >
                 Correo
               </Text>
             </View>
             <View style={{ flexDirection: "row", alignItems: "center" }}>
-              <Text style={[{ fontSize: 13, fontFamily: "lightItalic" }]}>
+              <Text style={[{ fontSize: 13, fontFamily: "regular" }]}>
                 {post?.email}
               </Text>
             </View>
           </View>
-          <View style={[styles.line, global.bgWhiteSmoke]} />
+          <View style={[styles.line, global.bgMidGray]} />
           <View
             style={{
               flexDirection: "row",
@@ -642,8 +855,8 @@ const SearchPost = ({ route, navigation }) => {
               {/* <MaterialCommunityIcons name="web" size={24} color="#1f1f1f" /> */}
               <Text
                 style={[
-                  { fontFamily: "thinItalic", fontSize: 15 },
-                  global.midGray,
+                  { fontFamily: "lightItalic", fontSize: 13 },
+                  global.black,
                 ]}
               >
                 Web
@@ -652,7 +865,7 @@ const SearchPost = ({ route, navigation }) => {
             <View style={{ flexDirection: "row", alignItems: "center" }}>
               <Text
                 style={[
-                  { fontSize: 13, fontFamily: "lightItalic", marginRight: 5 },
+                  { fontSize: 13, fontFamily: "regular", marginRight: 5 },
                 ]}
               >
                 Link
@@ -660,7 +873,7 @@ const SearchPost = ({ route, navigation }) => {
               <AntDesign name="link" size={16} color="#1f1f1f" />
             </View>
           </View>
-          <View style={[styles.line, global.bgWhiteSmoke]} />
+          <View style={[styles.line, global.bgMidGray]} />
           <View
             style={{
               flexDirection: "row",
@@ -673,8 +886,8 @@ const SearchPost = ({ route, navigation }) => {
               {/* <FontAwesome name="instagram" size={24} color="#1f1f1f" /> */}
               <Text
                 style={[
-                  { fontFamily: "thinItalic", fontSize: 15 },
-                  global.midGray,
+                  { fontFamily: "lightItalic", fontSize: 13 },
+                  global.black,
                 ]}
               >
                 Instagram
@@ -683,7 +896,7 @@ const SearchPost = ({ route, navigation }) => {
             <View style={{ flexDirection: "row", alignItems: "center" }}>
               <Text
                 style={[
-                  { fontSize: 13, fontFamily: "lightItalic", marginRight: 5 },
+                  { fontSize: 13, fontFamily: "regular", marginRight: 5 },
                 ]}
               >
                 Link
@@ -691,7 +904,7 @@ const SearchPost = ({ route, navigation }) => {
               <AntDesign name="link" size={16} color="#1f1f1f" />
             </View>
           </View>
-          <View style={[styles.line, global.bgWhiteSmoke]} />
+          <View style={[styles.line, global.bgMidGray]} />
           <View
             style={{
               flexDirection: "row",
@@ -704,8 +917,8 @@ const SearchPost = ({ route, navigation }) => {
               {/* <FontAwesome name="facebook-square" size={24} color="#1f1f1f" /> */}
               <Text
                 style={[
-                  { fontFamily: "thinItalic", fontSize: 15 },
-                  global.midGray,
+                  { fontFamily: "lightItalic", fontSize: 13 },
+                  global.black,
                 ]}
               >
                 Facebook
@@ -714,7 +927,7 @@ const SearchPost = ({ route, navigation }) => {
             <View style={{ flexDirection: "row", alignItems: "center" }}>
               <Text
                 style={[
-                  { fontSize: 13, fontFamily: "lightItalic", marginRight: 5 },
+                  { fontSize: 13, fontFamily: "regular", marginRight: 5 },
                 ]}
               >
                 Link
@@ -722,8 +935,103 @@ const SearchPost = ({ route, navigation }) => {
               <AntDesign name="link" size={16} color="#1f1f1f" />
             </View>
           </View>
-          <View style={[styles.line, global.bgWhiteSmoke]} />
+          <View style={[styles.line, global.bgMidGray]} />
+          <Modal
+            animationType="none"
+            transparent={true}
+            visible={open}
+            onRequestClose={() => {
+              setOpen(!open);
+              setImageView(null);
+            }}
+          >
+            <TouchableWithoutFeedback
+              onPress={() => {
+                setOpen(!open);
+                setImageView(null);
+              }}
+            >
+              <View style={styles.modalContainer}>
+                <TouchableWithoutFeedback>
+                  <View style={[styles.modalContent]}>
+                    <View style={styles.modalTop}>
+                      <Pressable
+                        onPress={() => {
+                          setOpen(!open);
+                          setImageView(null);
+                        }}
+                      >
+                        <Image
+                          style={{
+                            width: 35,
+                            height: 35,
+                            resizeMode: "contain",
+                          }}
+                          source={require("@/utils/images/arrow_back.png")}
+                        />
+                      </Pressable>
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Image
+                        style={{
+                          width: "100%",
+                          height: "60%",
+                          resizeMode: "cover",
+                          borderRadius: 5,
+                          borderWidth: 0.7,
+                          borderColor: "#1f1f1f",
+                        }}
+                        source={{
+                          uri: imageView?.url ? imageView?.url : imageView?.uri,
+                        }}
+                      />
+                      {imageView?.url && (
+                        <View style={{ flex: 1, paddingVertical: 15 }}>
+                          <View
+                            style={{
+                              flex: 1,
+                              flexDirection: "row",
+                              borderColor: "#1f1f1f",
+                              borderWidth: 0.7,
+                              paddingHorizontal: 10,
+                              borderRadius: 8,
+                              marginTop: 10,
+                            }}
+                          >
+                            <TextInput
+                              value={
+                                imageView.key === 0
+                                  ? post.description
+                                  : imageView?.description
+                              }
+                              editable={false}
+                              style={{
+                                flex: 1,
+                                // width: 100,
+                                fontFamily: "regular",
+                                fontSize: 14,
+                                alignItems: "flex-start",
+                                color: "#000",
+                              }}
+                              multiline={true}
+                              numberOfLines={5}
+                            />
+                          </View>
+                        </View>
+                      )}
+                    </View>
+                  </View>
+                </TouchableWithoutFeedback>
+              </View>
+            </TouchableWithoutFeedback>
+          </Modal>
         </View>
+        <ModalAlert
+          text={`Seguro quieres reportar este negocio?`}
+          close={() => setVisible(false)}
+          open={visible}
+          icon={require("@/utils/images/error.png")}
+        />
       </ScrollView>
     </View>
   );

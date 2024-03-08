@@ -13,7 +13,6 @@ const Other = ({ route, navigation }) => {
           <Pressable
             style={[styles.button, styles.buttonClose]}
             onPress={() => {
-              console.log("PRESIONADO");
               navigation.goBack();
             }}
           >

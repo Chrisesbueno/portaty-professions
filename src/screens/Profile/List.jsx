@@ -6,16 +6,17 @@ import CustomButton from "@/components/CustomButton";
 
 const List = ({ route, navigation }) => {
   const { data, user } = route.params;
+  console.log(data)
   const global = require("@/utils/styles/global.js");
-  console.log(user);
   if (data.length !== 0)
     return (
       <View
         style={[
-          { flex: 1, paddingHorizontal: 10, paddingTop: 40 },
+          { flex: 1, paddingHorizontal: 20, paddingTop: 50 },
           global.bgWhite,
         ]}
       >
+        <Text style={{fontFamily: 'regular', fontSize: 16, marginBottom: 10}}>Tienes {data.length} negocio(s) registrado(s)</Text>
         {data.map((post, index) => (
           <ItemProfile
             key={index}
@@ -24,6 +25,21 @@ const List = ({ route, navigation }) => {
             styled={{ column: styles.columnList }}
           />
         ))}
+        <View style={{flex: 1, justifyContent: 'center', alignItems: 'center'}}>
+
+        <Text style={{fontFamily: 'regular', fontSize: 18, textAlign: 'center'}}>Solo puedes registrar 1 negocio con tu cuenta gratuita </Text>
+        <CustomButton
+          text={`Adquiere un plan`}
+          handlePress={() =>
+            navigation.navigate("FormNavigator", {
+              user: user["custom:userTableID"],
+            })
+          }
+          textStyles={[styles.textSearch, global.black]}
+          buttonStyles={[styles.search, global.bgYellow]}
+        />
+        </View>
+
       </View>
     );
   if (data.length === 0)
@@ -39,18 +55,18 @@ const List = ({ route, navigation }) => {
           global.bgWhite,
         ]}
       >
-        <Text style={{ fontFamily: "light", fontSize: 16 }}>
+        <Text style={{ fontFamily: "regular", fontSize: 16 }}>
           No tienes ningun negocio registrado
         </Text>
         <CustomButton
           text={`Registrar un negocio`}
           handlePress={() =>
-            navigation.navigate("Form", {
+            navigation.navigate("FormNavigator", {
               user: user["custom:userTableID"],
             })
           }
-          textStyles={[styles.textSearch, global.white]}
-          buttonStyles={[styles.search, global.mainBgColor]}
+          textStyles={[styles.textSearch, global.black]}
+          buttonStyles={[styles.search, global.bgYellow]}
         />
       </View>
     );

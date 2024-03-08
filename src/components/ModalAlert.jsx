@@ -35,30 +35,34 @@ const ModalAlert = ({ text, icon, close, open }) => {
                     source={icon}
                   />
                   <View style={{ paddingVertical: 15 }}>
-                    <Text style={{ fontFamily: "light", fontSize: 16 }}>
+                    <Text style={{ fontFamily: "regular", fontSize: 16 }}>
                       {text}
                     </Text>
                   </View>
                 </View>
-                <Pressable
+                
+              </View>
+              <Pressable
                   onPress={close}
                   style={[
-                    global.mainBgColor,
+                    global.bgYellow,
                     {
-                      marginTop: 30,
-                      padding: 10,
-                      borderRadius: 6,
-                      width: 80,
-                      alignItems: "center",
-                      alignSelf: "flex-end",
+                      height: 30,
+                      flex: 0.3,
+                      justifyContent: 'center',
+                      alignItems: 'center',
+                      borderRadius: 8,
+                      // alignItems: "center",
+                      // alignSelf: "flex-end",
+                      borderColor: '#1f1f1f',
+                      borderWidth: 0.7
                     },
                   ]}
                 >
-                  <Text style={[global.white, { fontFamily: "medium" }]}>
+                  <Text style={[global.black, { fontFamily: "bold" }]}>
                     Aceptar
                   </Text>
                 </Pressable>
-              </View>
             </View>
           </TouchableWithoutFeedback>
         </View>

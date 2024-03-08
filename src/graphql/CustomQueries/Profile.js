@@ -22,6 +22,25 @@ export const listActivities = /* GraphQL */ `
     }
   }
 `;
+export const listAreas = /* GraphQL */ `
+  query ListAreas(
+    $filter: ModelAreaFilterInput
+    $limit: Int
+    $nextToken: String
+  ) {
+    listAreas(filter: $filter, limit: $limit, nextToken: $nextToken) {
+      items {
+        name
+        activities {
+          items {
+            name
+          }
+        }
+      }
+    }
+  }
+`;
+
 export const userByEmail = /* GraphQL */ `
   query UserByEmail(
     $email: String!
@@ -50,8 +69,11 @@ export const userByEmail = /* GraphQL */ `
             userID
             name
             image
+            thumbnail
+            images
             email
             phone
+            description
             whatsapp
             instagram
             facebook
@@ -78,3 +100,60 @@ export const userByEmail = /* GraphQL */ `
   }
 `;
 
+export const getBusiness = /* GraphQL */ `
+  query GetBusiness($id: ID!) {
+    getBusiness(id: $id) {
+      id
+      userID
+      identityID
+      name
+      image
+      images
+      thumbnail
+      email
+      phone
+      whatsapp
+      instagram
+      description
+      facebook
+      page
+      coordinates {
+        lat
+        lon
+        __typename
+      }
+      activity
+      tags
+      favorites {
+        items {
+          id
+        }
+        nextToken
+        __typename
+      }
+      createdAt
+      updatedAt
+      __typename
+    }
+  }
+`;
+
+export const getImages = /* GraphQL */ `
+  query GetBusiness($id: ID!) {
+    getBusiness(id: $id) {
+      id
+      images
+    }
+  }
+`;
+export const getBusinessCoordinate = /* GraphQL */ `
+  query GetBusiness($id: ID!) {
+    getBusiness(id: $id) {
+      id
+      coordinates {
+        lat
+        lon
+      }
+    }
+  }
+`;

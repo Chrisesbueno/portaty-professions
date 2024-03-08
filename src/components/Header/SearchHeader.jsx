@@ -9,7 +9,7 @@ const SearchHeader = ({navigation}) => {
   return (
     <View style={[styles.home, global.bgWhite]}>
       <TouchableOpacity
-        style={[styles.content, global.bgWhiteSoft]}
+        style={[styles.content, global.bgWhite]}
         activeOpacity={1}
         onPress={() => navigation.navigate('SearchIn')}
       >

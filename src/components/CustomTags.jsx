@@ -92,7 +92,7 @@ const CustomTags = ({ data }) => {
                       columnWrapperStyle={{ justifyContent: "space-between" }}
                     />
                   </View>
-                  <View style={[styles.line, global.bgMidGray]} />
+                  {/* <View style={[styles.line, global.bgMidGray]} />
                   <CustomInput
                     control={control}
                     name={`personalizado`}
@@ -104,9 +104,9 @@ const CustomTags = ({ data }) => {
                       input: [styles.inputContainer],
                       placeholder: styles.placeholder,
                     }}
-                    // text={`Personalizado`}
-                  />
-                  <TouchableOpacity
+                    text={`Personalizado`}
+                  /> */}
+                  {/* <TouchableOpacity
                     style={[
                       global.mainBgColor,
                       {
@@ -131,7 +131,13 @@ const CustomTags = ({ data }) => {
                     >
                       {`Agregar tag`}
                     </Text>
-                  </TouchableOpacity>
+                  </TouchableOpacity> */}
+                  <TouchableOpacity
+                      onPress={() => setModalVisible(!modalVisible)}
+                      style={[{alignItems: 'center', justifyContent: 'center', padding: 10, borderRadius: 8, marginTop: 15}, global.mainBgColor]}
+                    >
+                      <Text style={{fontFamily: 'medium', color: '#fff', textAlign: 'center'}}>Aceptar</Text>
+                    </TouchableOpacity>
                 </View>
               </View>
             </View>

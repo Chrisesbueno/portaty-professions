@@ -20,10 +20,9 @@ const ItemGrid = ({ data, number, styled }) => {
   const [select, setSelect] = useState(false);
   const [selection, setSelection] = useRecoilState(favoriteSelection);
   const navigation = useNavigation();
-  const [selectKey, setSelectKey] = useState("");
   const [loading, setLoading] = useState(false);
   const selectionFavorite = selection.some((item) => item === data.id);
-  console.log(data.business.identityID, data.business.image);
+  
   const onDeleteFavorite = async () => {
     const favorites = await API.graphql({
       query: customFavorites.deleteFavorites,
@@ -34,39 +33,20 @@ const ItemGrid = ({ data, number, styled }) => {
       },
       authMode: "AMAZON_COGNITO_USER_POOLS",
     });
-    console.log(favorites);
   };
-  const getImage = async () => {
-    setLoading(true);
-    try {
-      await Storage.get(data.business.image, {
-        level: "protected",
-        identityId: data.business.identityID,
-      }).then((res) => setSelectKey(res));
-      setLoading(false);
-    } catch (error) {
-      console.log("toy en grid", error);
-    }
-  };
-  useLayoutEffect(() => {
-    getImage();
-  }, []);
-  // if (save)
-  if (selectKey)
+
     return (
       <TouchableOpacity
         style={styled.column}
         onPress={() => {
           if (selectionFavorite) {
-            // setSelect(false)
-            // console.log(selection)
             let selections = selection.filter((item) => item !== data.id);
             setSelection(selections);
           } else {
             navigation.navigate("FavoritePage", {
               data: {
                 item: data,
-                image: selectKey,
+                image: JSON.parse(data.business.images[0]).url,
               },
             });
           }
@@ -78,13 +58,6 @@ const ItemGrid = ({ data, number, styled }) => {
         delayLongPress={1000}
         activeOpacity={1}
       >
-        {!selectKey ? (
-          <View
-            style={{ flex: 1, alignItems: "center", justifyContent: "center" }}
-          >
-            <ActivityIndicator size={`small`} color="fb8500" />
-          </View>
-        ) : (
           <Image
             style={{
               width: "100%",
@@ -92,9 +65,8 @@ const ItemGrid = ({ data, number, styled }) => {
               resizeMode: "cover",
               borderRadius: 2,
             }}
-            source={{ uri: selectKey }}
+            source={{ uri: data.business.thumbnail }}
           />
-        )}
         {selectionFavorite ? (
           <View
             style={{

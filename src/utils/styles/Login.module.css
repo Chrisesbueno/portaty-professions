@@ -12,50 +12,51 @@
   margin-top: 10px;
 }
 .title {
-  font-family: "name";
+  font-family: "medium";
   margin: 10% 10px 0%;
   text-align: center;
-  font-size: 42px;
-  color: #fb8500;
+  font-size: 32px;
+  color: #1f1f1f;
 }
 .name {
-  font-family: "name";
+  font-family: "light";
   margin: 0 10px 10%;
   text-align: center;
-  font-size: 42px;
-  color: #fb8500;
+  font-size: 32px;
+  color: #1f1f1f;
 }
 .inputContainer {
   flex: 1;
   flex-direction: row;
   justify-content: space-between;
   align-items: center;
-  background-color: #fafafa;
+  background-color: #fff;
   border: none;
   padding: 11px 10px 11px 0px;
   border-radius: 8px;
   margin: 3px 0px 10px;
+  border: 1px solid #1f1f1f;
 }
 .labelInput {
-  font-family: "regular";
+  font-family: "bold";
   font-size: 14px;
-  color: #404040;
+  color: #1f1f1f;
 }
 .textInput {
   flex: 1;
-  font-family: "light";
-  margin-left: 10px;
-  color: #fb8500;
+  font-family: "regular";
+  margin-left: 14px;
+  color: #1f1f1f;
 }
 .errorInput {
-  font-family: "light";
+  font-family: "bold";
   color: red;
   font-size: 12px;
   position: relative;
   top: -10px;
 }
 .errorInputMain {
-  font-family: "light";
+  font-family: "bold";
   color: red;
   font-size: 14px;
   position: relative;
@@ -64,26 +65,28 @@
 .placeholder {
   flex: 1;
   margin-left: 10px;
-  color: #8c9199cb;
-  font-size: 12px;
-  font-family: "light";
+  color: #1f1f1f;
+  font-size: 14px;
+  font-family: "regular";
 }
 
 .login {
   flex: 1;
   text-align: center;
   width: 100%;
+  /* justify-content: center; */
+  align-items: center;
   padding: 20px;
-  height: 60px;
-  background-color: #fb8500;
-  border-radius: 16px;
+  /* padding-top: -20px; */
+  height: 65px;
+  border-radius: 12px;
+  border: 1px solid #1f1f1f;
 }
 
 .textLogin {
-  text-align: center;
-  font-family: "medium";
-  color: white;
-  font-size: 15px;
+  /* text-align: center; */
+  font-family: "bold";
+  font-size: 18px;
 }
 
 .signup {
@@ -91,20 +94,20 @@
   justify-content: center;
 }
 .dont {
-  font-family: "thin";
-  color: #c8c8c8;
+  font-family: "light";
+  color: #1f1f1f;
   font-size: 15px;
 }
 .signupBtn {
-  font-family: "regular";
+  font-family: "bold";
   margin-left: 5px;
-  color: #fb8500;
+  color: #1f1f1f;
   font-size: 15px;
 }
 .forgot {
   text-align: center;
-  font-family: "regular";
-  color: #fb8500;
+  font-family: "bold";
+  color: #1f1f1f;
   font-size: 15px;
 }
 .options {

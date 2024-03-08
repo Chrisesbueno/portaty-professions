@@ -13,7 +13,6 @@ import CustomQR from "@/components/CustomQR";
 const HomeNavigator = ({ route, navigation }) => {
   const Stack = createNativeStackNavigator();
   const selections = useRecoilValue(favoriteSelection);
-  console.log(selections.length);
   return (
     <Stack.Navigator id="Home_Stack" initialRouteName={`Home`}>
       <Stack.Screen

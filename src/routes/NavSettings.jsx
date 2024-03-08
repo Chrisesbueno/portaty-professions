@@ -36,6 +36,7 @@ const NavSettings = ({ checkRender }) => {
     // Verifica si la aplicación se está abriendo mediante un deep link al iniciar
     const checkInitialUrl = async () => {
       const initialUrl = await Linking.getInitialURL();
+      if (!initialUrl) return;
       const { hostname, path, queryParams } = Linking.parse(initialUrl);
       if (initialUrl) {
         // La aplicación se abrió mediante un deep link, puedes realizar acciones aquí

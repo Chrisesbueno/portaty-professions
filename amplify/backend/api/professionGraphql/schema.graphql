@@ -1,4 +1,31 @@
 # schema
+type Area
+  @model
+  @auth(
+    rules: [
+      { allow: groups, groups: ["sp"] }
+      { allow: private, provider: iam, operations: [read] }
+    ]
+  ) {
+  id: ID!
+  name: String!
+  activities: [Activity] @hasMany(indexName: "byAreaActivities", fields: ["id"])
+}
+
+type Activity
+  @model
+  @auth(
+    rules: [
+      { allow: groups, groups: ["sp"] }
+      { allow: private, provider: iam, operations: [read] }
+    ]
+  ) {
+  id: ID!
+  name: String!
+  areaID: ID! @index(name: "byAreaActivities")
+  area: Area @belongsTo(fields: ["areaID"])
+}
+
 type Users
   @model
   @auth(
@@ -28,7 +55,6 @@ type Users
 
 type Business
   @model
-  @searchable
   @auth(
     rules: [
       { allow: owner }
@@ -39,9 +65,12 @@ type Business
   id: ID!
   userID: ID @index(name: "byUsersBusiness")
   user: Users @belongsTo(fields: ["userID"])
+  status: BusinessStatus @default(value: "ENABLED")
   identityID: String
   name: String
   image: String
+  images: [String]
+  thumbnail: String
   email: String
   phone: String
   whatsapp: String
@@ -53,18 +82,18 @@ type Business
   tags: [String]
   favorites: [Favorites]
     @hasMany(indexName: "byBusinessFavorites", fields: ["id"])
+  description: String
+  prefer: Boolean @default(value: "false")
+}
+enum BusinessStatus {
+  ENABLED
+  DISABLED
+  SUSPENDED
 }
 
-type Tags @model @auth(rules: [{ allow: private, provider: iam }]) {
-  id: ID!
-  name: String!
-  objects: [Activity] @manyToMany(relationName: "ActivityTags")
-}
-
-type Activity @model @auth(rules: [{ allow: private, provider: iam }]) {
-  id: ID!
-  name: String!
-  tags: [Tags] @manyToMany(relationName: "ActivityTags")
+type ImageBusiness {
+  key: Int
+  url: String
 }
 
 type Favorites
@@ -121,7 +150,7 @@ type Complaints
   @model
   @auth(
     rules: [
-      { allow: owner, operations: [create, read, update] }
+      { allow: owner, operations: [create, read] }
       { allow: groups, groups: ["sp"], operations: [read, update, delete] }
     ]
   ) {
@@ -140,6 +169,22 @@ type Complaints
         { allow: groups, groups: ["sp"], operations: [read, update, delete] }
       ]
     )
+  status: ComplaintStatus!
+    @auth(
+      rules: [
+        { allow: owner, operations: [create, read, update] }
+        { allow: groups, groups: ["sp"], operations: [read, update, delete] }
+      ]
+    )
+
+  reasonID: ID!
+    @auth(
+      rules: [
+        { allow: owner, operations: [create, read, update] }
+        { allow: groups, groups: ["sp"], operations: [read, update, delete] }
+      ]
+    )
+  reason: ReasonComplaints @hasOne(fields: ["reasonID"])
   description: String!
     @auth(
       rules: [
@@ -147,9 +192,20 @@ type Complaints
         { allow: groups, groups: ["sp"], operations: [read, update, delete] }
       ]
     )
-  status: ComplaintStatus!
+  owner: String @auth(rules: [{ allow: owner, operations: [read, delete] }])
 }
 
+type ReasonComplaints
+  @model
+  @auth(
+    rules: [
+      { allow: owner, operations: [read] }
+      { allow: groups, groups: ["sp"] }
+    ]
+  ) {
+  id: ID!
+  name: String!
+}
 type Logs @model @auth(rules: [{ allow: groups, groups: ["sp"] }]) {
   id: ID!
   userID: ID!
@@ -168,11 +224,7 @@ type Logs @model @auth(rules: [{ allow: groups, groups: ["sp"] }]) {
 # enum
 enum ComplaintStatus {
   PENDING
-  IN_REVIEW
-  IN_PROGRESS
   RESOLVED
-  REFUSED
-  CANCELLED
 }
 
 enum TypeLogs {
@@ -181,7 +233,7 @@ enum TypeLogs {
   FAVORITE
 }
 
-type Testing @model @searchable @auth(rules: [{ allow: private }]) {
+type Testing @model @auth(rules: [{ allow: private }]) {
   id: ID!
   name: [String!]!
   coordinates: Coordinates!

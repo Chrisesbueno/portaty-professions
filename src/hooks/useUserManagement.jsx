@@ -31,7 +31,6 @@ const useUserManagement = () => {
     }, 1000);
   };
   const checkUser = async () => {
-    console.log("SE ACTIVO EL CHECK USER");
     try {
       const data = await Auth.currentAuthenticatedUser();
       setUserAuth(data);
@@ -73,7 +72,7 @@ const useUserManagement = () => {
             identityID: identityId,
           },
         },
-      }).then((r) => console.log("TABLA IDENTITYD ID UPDATE"));
+      });
     } catch (error) {
       console.log("ERROR AL ACTUALZIAR TABLA EN IDENTITYID", error);
     }

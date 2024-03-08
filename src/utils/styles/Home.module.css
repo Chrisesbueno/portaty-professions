@@ -5,14 +5,13 @@
     width: 200px;
     padding: 20px;
     height: 60px;
-    background-color: #ffa424;
-    border-radius: 16px;
+    border-radius: 8px;
+    border: 0.7px solid #1f1f1f;
   }
   
   .textSearch {
     text-align: center;
-    font-family: "medium";
-    color: white;
+    font-family: "bold";
     font-size: 15px;
   }
   

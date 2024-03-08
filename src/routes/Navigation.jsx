@@ -23,12 +23,11 @@ import Loading from "@/components/Loading";
 const Navigation = () => {
   const Stack = createNativeStackNavigator();
   const global = require("@/utils/styles/global.js");
+  useLocation()
   const [checkRender, setCheckRender] = useState(true);
   const [userState, setUserState] = useState(false);
   const [isFirsTime, setIsFirsTime] = useState(false);
   const userAuth = useRecoilValue(userAuthenticated);
-  // pido localizacion
-  const { location } = useLocation();
   const renderNavigation = () => {
     setCheckRender(true);
 

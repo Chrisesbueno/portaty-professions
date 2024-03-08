@@ -8,16 +8,28 @@ import SearchIn from "@/screens/Search/SearchIn";
 import styles from "@/utils/styles/Header.module.css";
 import SearchOut from "@/screens/Search/SearchOut";
 import LeftHeader from "@/components/Header/LeftHeader";
-
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import Other from "@/screens/Search/Other";
 import CustomQR from "@/components/CustomQR";
+import { useRecoilState } from "recoil";
+import { activeSearch, textInputSearch } from "@/atoms";
 
 const SearchNavigator = ({ navigation }) => {
   const [active, setActive] = useState(false);
-  const [activeOut, setActiveOut] = useState(false);
-  const [inputSearch, setInputSearch] = useState("");
+  const [activeOut, setActiveOut] = useRecoilState(activeSearch);
+  const [inputSearch, setInputSearch] = useRecoilState(textInputSearch);
   const Stack = createNativeStackNavigator();
   const global = require("@/utils/styles/global.js");
+  // Guardar los resultados de la búsqueda
+  const cacheResults = async (resultado) => {
+    try {
+      const terminosGuardados = JSON.parse(await AsyncStorage.getItem('@terminos_busqueda')) || [];
+      terminosGuardados.push(resultado);
+      await AsyncStorage.setItem('@terminos_busqueda', JSON.stringify(terminosGuardados));
+    } catch (error) {
+      console.log('error aqui' , error)
+    }
+  };
   return (
     <Stack.Navigator initialRouteName={`Search`}>
       <Stack.Screen
@@ -49,27 +61,29 @@ const SearchNavigator = ({ navigation }) => {
                   </TouchableOpacity>
                 )}
                 <TouchableOpacity
-                  style={[styles.content, global.bgWhiteSoft]}
+                  style={[styles.content, global.bgWhite]}
                   activeOpacity={1}
                   onPress={() => setActive(true)}
                 >
                   <Image
                     style={{
-                      width: 30,
-                      height: 30,
+                      width: 22,
+                      height: 22,
                       resizeMode: "cover",
                     }}
-                    source={require("@/utils/images/search.png")}
+                    source={require("@/utils/images/search_white.png")}
                   />
                   <TextInput
                     placeholder={"Buscar"}
                     style={styles.input}
                     onPressIn={() => setActive(true)}
                     onChangeText={(e) => setInputSearch(e)}
+                    placeholderTextColor='#1f1f1f'
                     value={inputSearch}
                     returnKeyType="search"
                     onSubmitEditing={() => {
                       setActiveOut(false);
+                      cacheResults(inputSearch.trim());
                       navigation.navigate("SearchOut", { input: inputSearch });
                     }}
                   />
@@ -112,7 +126,7 @@ const SearchNavigator = ({ navigation }) => {
                   />
                 </TouchableOpacity>
                 <TouchableOpacity
-                  style={[styles.content, global.bgWhiteSoft]}
+                  style={[styles.content, global.bgWhite]}
                   activeOpacity={1}
                   onPress={() => setActiveOut(true)}
                 >
@@ -130,9 +144,11 @@ const SearchNavigator = ({ navigation }) => {
                     onPressIn={() => setActiveOut(true)}
                     onChangeText={(e) => setInputSearch(e)}
                     value={inputSearch}
+                    placeholderTextColor='#1f1f1f'
                     returnKeyType="search"
                     onSubmitEditing={() => {
                       setActiveOut(false);
+                      cacheResults(inputSearch.trim());
                       navigation.navigate("SearchOut", { input: inputSearch });
                     }}
                   />

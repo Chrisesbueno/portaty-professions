@@ -3,7 +3,7 @@ import React, { useState } from "react";
 import { Controller } from "react-hook-form";
 
 const CustomInput = ({
-  defaultValue,
+  defaultValue = "",
   control,
   name,
   rules = {},
@@ -17,7 +17,10 @@ const CustomInput = ({
   area = false,
   lines = 1,
   errorPost = false,
+  max = 100,
+  editable=true
 }) => {
+  const [description, setDescription] = useState('')
   const [securityChange, setSecurityChange] = useState(true);
   return (
     <Controller
@@ -25,7 +28,7 @@ const CustomInput = ({
       name={name}
       rules={rules}
       render={({
-        field: { value, onChange, onBlur },
+        field: { defaultValue, onChange, onBlur },
         fieldState: { error },
       }) => (
         <View>
@@ -48,34 +51,43 @@ const CustomInput = ({
                 />
               )}
               <TextInput
-                value={value}
-                onChangeText={onChange}
+                value={defaultValue}
+                onChangeText={(e) => {
+                  onChange(e)
+                  setDescription(e)
+                }}
                 onBlur={onBlur}
                 placeholder={placeholder}
                 placeholderTextColor={placeholderTextColor}
-                style={value ? styled.text : styled.placeholder}
+                style={defaultValue ? styled.text : styled.placeholder}
                 secureTextEntry={security && securityChange}
                 defaultValue={defaultValue}
                 multiline={area ? true : false}
                 numberOfLines={lines}
+                maxLength={max}
+                editable={editable}
               />
+              {max === 500 && (
+                <Text style={{ position: "absolute", bottom: 0, right: 0, fontFamily: 'regular', fontSize: 12 }}>{description.length} / 500</Text>
+              )}
             </View>
 
-            {security
-              && iconRight && (
-                  <TouchableOpacity
-                    onPress={() => setSecurityChange(!securityChange)}
-                    style={styled.security}
-                  >
-                    {
-                      securityChange ? <Image
-                      style={{
-                        width: 30,
-                        height: 30,
-                        resizeMode: "contain",
-                      }}
-                      source={require("@/utils/images/eye_yes.png")}
-                    /> : <Image
+            {security && iconRight && (
+              <TouchableOpacity
+                onPress={() => setSecurityChange(!securityChange)}
+                style={styled.security}
+              >
+                {securityChange ? (
+                  <Image
+                    style={{
+                      width: 30,
+                      height: 30,
+                      resizeMode: "contain",
+                    }}
+                    source={require("@/utils/images/eye_yes.png")}
+                  />
+                ) : (
+                  <Image
                     style={{
                       width: 30,
                       height: 30,
@@ -83,15 +95,14 @@ const CustomInput = ({
                     }}
                     source={require("@/utils/images/eye_no.png")}
                   />
-                    }
-                  </TouchableOpacity>
-                )
-              }
+                )}
+              </TouchableOpacity>
+            )}
           </View>
           {error && (
             <Text style={styled.error}>{error.message || "Requerido"}</Text>
           )}
-          {errorPost && (
+          {/* {error && (
             <Text
               style={{
                 color: "red",
@@ -105,7 +116,7 @@ const CustomInput = ({
             >
               Requerido
             </Text>
-          )}
+          )} */}
         </View>
       )}
     />

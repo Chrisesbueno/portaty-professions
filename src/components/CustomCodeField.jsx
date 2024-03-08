@@ -19,9 +19,9 @@ const styles = StyleSheet.create({
     height: 45,
     lineHeight: 43,
     fontSize: 18,
-    fontFamily: 'light',
+    fontFamily: 'bold',
     borderWidth: 1,
-    borderColor: '#fb8500',
+    borderColor: '#1f1f1f',
     textAlign: 'center',
     borderRadius: 10
   },

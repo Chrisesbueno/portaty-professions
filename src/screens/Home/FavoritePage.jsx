@@ -8,10 +8,14 @@ import {
   Share,
   Linking,
   Platform,
+  FlatList,
+  Modal,
+  TouchableWithoutFeedback,
+  Pressable,
 } from "react-native";
 import React, { useEffect, useLayoutEffect, useState } from "react";
 import CustomSelect from "@/components/CustomSelect";
-import styles from "@/utils/styles/Unprofile.module.css";
+import styles from "@/utils/styles/FavoritePage.module.css";
 import {
   FontAwesome5,
   MaterialCommunityIcons,
@@ -20,6 +24,9 @@ import {
   Foundation,
   EvilIcons,
   Feather,
+  Entypo,
+  MaterialIcons,
+  Octicons,
 } from "@expo/vector-icons";
 import { Auth, API, Storage } from "aws-amplify";
 import * as queries from "@/graphql/CustomQueries/Favorites";
@@ -29,16 +36,72 @@ import MapView, { Marker, PROVIDER_GOOGLE } from "react-native-maps";
 import ModalAlert from "@/components/ModalAlert";
 import Swiper from "react-native-swiper";
 import SkeletonExample from "@/components/SkeletonExample";
+import { useRecoilState } from "recoil";
+import { updateListFavorites } from "@/atoms";
+import * as FileSystem from "expo-file-system";
+import { StorageAccessFramework } from "expo-file-system";
+import { useRef } from "react";
 
 const FavoritePage = ({ navigation, route }) => {
   const global = require("@/utils/styles/global.js");
   const [post, setPost] = useState([]);
-  const [storageImages, setStorageImages] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [visible, setVisible] = useState(false);
+  const [listUpdate, setListUpdate] = useRecoilState(updateListFavorites);
+  const [imageView, setImageView] = useState(null);
+  const [dimensionsImages, setDimensionsImages] = useState(0);
+  const [open, setOpen] = useState(false);
+
   const {
     data: { item, image },
   } = route.params;
+
+  console.log(item.business.images);
+  const list = item?.business?.images
+    .map((image) => JSON.parse(image))
+    .sort((a, b) => a.key - b.key);
+
+  const onViewRef = useRef((viewableItems) => {
+    if (viewableItems.changed[0].isViewable)
+      setDimensionsImages(viewableItems.changed[0].item.key);
+  });
+  const viewConfigRef = useRef({ viewAreaCoveragePercentThreshold: 20 });
+
+  const getPdf = async () => {
+    const permissions =
+      await StorageAccessFramework.requestDirectoryPermissionsAsync();
+    if (!permissions.granted) {
+      return;
+    }
+
+    const api = "api-professions-gateway";
+    const path = "/documentqr";
+    const params = {
+      headers: {},
+      queryStringParameters: {
+        path: `https://www.portaty.com/share/business?id=${item.businessID}`,
+      },
+    };
+
+    try {
+      const response = await API.get(api, path, params);
+      await StorageAccessFramework.createFileAsync(
+        permissions.directoryUri,
+        "qr.pdf",
+        "application/pdf"
+      )
+        .then(async (uri) => {
+          await FileSystem.writeAsStringAsync(uri, response["pdf_base64"], {
+            encoding: FileSystem.EncodingType.Base64,
+          });
+        })
+        .catch((e) => {
+          console.log(e);
+        });
+    } catch (error) {
+      console.log("Error en pdf: ", error.message);
+    }
+  };
   const fetchData = async () => {
     try {
       const business = await API.graphql({
@@ -63,6 +126,7 @@ const FavoritePage = ({ navigation, route }) => {
       },
       authMode: "AMAZON_COGNITO_USER_POOLS",
     });
+    setListUpdate(!listUpdate);
     navigation.goBack();
   };
 
@@ -90,33 +154,11 @@ const FavoritePage = ({ navigation, route }) => {
     Linking.openURL(url);
   };
 
-  const AllImages = async () => {
-    try {
-      const result = await Storage.list(`business/${item.businessID}/extras/`, {
-        level: "protected",
-        identityId: item.business.identityID,
-        pageSize: 10,
-      });
-      const urls = await Promise.all(
-        result.results.map((item) =>
-          Storage.get(item.key, { level: "protected" })
-            .then((url) => url)
-            .catch((err) => console.log(err))
-        )
-      );
-      setStorageImages([image, ...urls]);
-    } catch (error) {
-      console.log(error);
-    }
-  };
-
   useLayoutEffect(() => {
     fetchData();
-    AllImages();
-    console.log(storageImages);
   }, []);
 
-  if (!item || storageImages.length === 0) return <SkeletonExample />;
+  if (!item) return <SkeletonExample />;
   return (
     <View
       style={[
@@ -131,107 +173,122 @@ const FavoritePage = ({ navigation, route }) => {
           style={[
             {
               flex: 1,
-              paddingHorizontal: 20,
               alignItems: "center",
               justifyContent: "center",
+              alignSelf: "center",
+              width: 320,
+              height: 250,
+              position: "relative",
             },
           ]}
         >
-          {storageImages.length !== 0 && (
-            <Swiper
-              style={{
-                // width: 340,
-                height: 260,
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-              showsButtons={true}
-              loop={false}
-              onIndexChanged={(index) => setCurrentIndex(index)}
-              onMomentumScrollEnd={(e, state) => setCurrentIndex(state.index)}
-              nextButton={
-                <Text
-                  style={{
-                    color:
-                      currentIndex < storageImages.length - 1
-                        ? "#fb8500"
-                        : "transparent",
-                    fontSize: 50,
-                  }}
-                >
-                  ›
-                </Text>
-              }
-              prevButton={
-                <Text
-                  style={{
-                    color: currentIndex > 0 ? "#fb8500" : "transparent",
-                    fontSize: 50,
-                  }}
-                >
-                  ‹
-                </Text>
-              }
-              activeDotColor="#000"
-            >
-              {storageImages.map((item, index) => (
-                <View
-                  style={{
-                    width: 310,
-                    height: 230,
+          {list.length !== 1 &&
+            dimensionsImages + 1 > 1 &&
+            dimensionsImages <= 3 && (
+              <View
+                style={[
+                  global.bgYellow,
+                  {
+                    width: 25,
+                    height: 25,
+                    position: "absolute",
+                    zIndex: 10,
+                    left: 0,
+                    top: "50%",
+                    opacity: 0.85,
                     borderRadius: 5,
-                    borderColor: "#efeded",
-                    borderWidth: 1,
-                    overflow: "hidden",
-                    padding: 10,
-                    marginBottom: 20,
-                    marginTop: 20,
-                    position: "relative",
+                  },
+                ]}
+              >
+                <Entypo name="triangle-left" size={24} color="#1f1f1f" />
+              </View>
+            )}
+          {list.length !== 1 &&
+            dimensionsImages >= 0 &&
+            dimensionsImages < list.length - 1 && (
+              <View
+                style={[
+                  global.bgYellow,
+                  {
+                    width: 25,
+                    height: 25,
+                    position: "absolute",
+                    zIndex: 10,
+                    top: "50%",
+                    right: 0,
+                    opacity: 0.85,
+                    borderRadius: 5,
+                  },
+                ]}
+              >
+                <Entypo name="triangle-right" size={24} color="#1f1f1f" />
+              </View>
+            )}
+          <FlatList
+            horizontal
+            data={list}
+            renderItem={({ item, index }) => (
+              <View
+                style={{
+                  flex: 1,
+                  width: 320,
+                  height: 250,
+                }}
+              >
+                <Image
+                  style={{
+                    width: "100%",
+                    height: "100%",
+                    resizeMode: "cover",
+                    borderRadius: 5,
+                    backgroundColor: "#fff",
+                    borderWidth: 0.7,
+                    borderColor: "#1f1f1f",
                   }}
-                  key={index}
-                >
-                  <Image
-                    style={{
-                      width: "100%",
-                      height: "100%",
-                      resizeMode: "cover",
+                  source={{ uri: item.url }}
+                />
+                <TouchableOpacity
+                  style={[
+                    {
+                      flexDirection: "row",
+                      padding: 8,
                       borderRadius: 5,
-                      backgroundColor: "#fff",
-                    }}
-                    source={{ uri: item }}
-                  />
-                  {/* <TouchableOpacity
+                      opacity: 0.7,
+                      alignItems: "center",
+                      marginBottom: 5,
+                      position: "absolute",
+                      right: 0,
+                      borderWidth: 0.8,
+                      borderColor: "#1f1f1f",
+                    },
+                    global.bgYellow,
+                  ]}
+                  onPress={() => {
+                    setOpen(!open);
+                    setImageView(item);
+                  }}
+                >
+                  <Text
                     style={[
-                      {
-                        position: "absolute",
-                        padding: 8,
-                        borderRadius: 5,
-                        opacity: 0.95,
-                        flexDirection: "row",
-                        justifyContent: "space-between",
-                        columnGap: 5,
-                        alignItems: "center",
-                        bottom: 0,
-                        right: 0,
-                      },
-                      global.mainBgColor,
+                      { fontFamily: "medium", fontSize: 17 },
+                      global.black,
                     ]}
-                    onPress={selectImages}
-                    activeOpacity={1}
                   >
-                    <MaterialCommunityIcons
-                      name="camera-plus-outline"
-                      size={23}
-                      color="white"
-                    />
-                    <Text style={[{ fontFamily: "medium" }, global.white]}>
-                      agregar mas fotos
-                    </Text>
-                  </TouchableOpacity> */}
-                </View>
-              ))}
-            </Swiper>
-          )}
+                    {item.key + 1}/{list.length}
+                  </Text>
+                  <MaterialCommunityIcons
+                    name="image-search-outline"
+                    size={18}
+                    color="#1f1f1f"
+                    style={{ marginLeft: 5 }}
+                  />
+                </TouchableOpacity>
+              </View>
+            )}
+            keyExtractor={(item, index) => index}
+            viewabilityConfig={viewConfigRef.current}
+            onViewableItemsChanged={onViewRef.current}
+          />
         </View>
         <View
           style={{
@@ -240,6 +297,7 @@ const FavoritePage = ({ navigation, route }) => {
             alignItems: "center",
             justifyContent: "space-between",
             padding: 20,
+            paddingHorizontal: 100,
           }}
         >
           <View
@@ -248,21 +306,46 @@ const FavoritePage = ({ navigation, route }) => {
               justifyContent: "center",
             }}
           >
-            <Text style={{ fontSize: 26, fontFamily: "thin" }}>
+            <Text style={{ fontSize: 24, fontFamily: "medium" }}>
               {post.favorites?.items.length}
             </Text>
-            <Text style={{ fontSize: 22, fontFamily: "thin" }}>Favoritos</Text>
+            <Text style={{ fontSize: 20, fontFamily: "light" }}>Favoritos</Text>
           </View>
-          <TouchableOpacity
-            style={[global.bgWhiteSmoke, { padding: 10, borderRadius: 8 }]}
-            onPress={onDeleteFavorite}
-          >
-            <Text style={{ fontSize: 14, fontFamily: "thin" }}>
-              Eliminar de favoritos
-            </Text>
+          <TouchableOpacity onPress={onDeleteFavorite}>
+            <Image
+              style={{
+                width: 45,
+                height: 45,
+                resizeMode: "cover",
+                borderWidth: 0.8,
+                borderColor: "#1f1f1f",
+                borderRadius: 50,
+              }}
+              source={require("@/utils/images/sifavorites.png")}
+            />
+            {/* <MaterialIcons name="favorite" size={45} color="red" /> */}
           </TouchableOpacity>
         </View>
-        <View style={[styles.line, global.bgWhiteSmoke]} />
+        <TouchableOpacity
+          style={{
+            alignSelf: "flex-end",
+            paddingHorizontal: 20,
+            paddingBottom: 5,
+            flexDirection: "row",
+            alignItems: 'center',
+          }}
+          onPress={() => setVisible(true)}
+        >
+          <MaterialIcons name="report" size={22} color="black" />
+          <Text style={[global.black, {
+            fontFamily: 'bold',
+            fontSize: 12
+            // marginLeft: 2,
+            // marginBottom: 3
+          }]}>Reportar negocio</Text>
+        </TouchableOpacity>
+
+        <View style={[styles.line, global.bgMidGray]} />
         <TouchableOpacity
           style={{
             padding: 20,
@@ -285,6 +368,8 @@ const FavoritePage = ({ navigation, route }) => {
               borderRadius: 10,
               overflow: "hidden",
               marginBottom: 40,
+              borderWidth: 0.7,
+              borderColor: "#1f1f1f",
             }}
           >
             <MapView
@@ -318,7 +403,7 @@ const FavoritePage = ({ navigation, route }) => {
             flexDirection: "row",
             justifyContent: "space-between",
             alignItems: "center",
-            marginTop: -23,
+            marginTop: -53,
           }}
           onPress={onShare}
         >
@@ -331,17 +416,19 @@ const FavoritePage = ({ navigation, route }) => {
                   borderRadius: 10,
                   alignItems: "center",
                   justifyContent: "center",
+                  borderWidth: 0.7,
+                  borderColor: "#1f1f1f",
                 },
-                global.mainBgColor,
+                global.bgYellow,
               ]}
             >
-              <EvilIcons name="share-google" size={25} color="white" />
+              <EvilIcons name="share-google" size={33} color="#1f1f1f" />
             </View>
             <View style={{ marginLeft: 10 }}>
-              <Text style={{ fontFamily: "light", fontSize: 16 }}>
+              <Text style={{ fontFamily: "medium", fontSize: 15 }}>
                 Compartir
               </Text>
-              <Text style={{ fontFamily: "thin", fontSize: 12, width: 150 }}>
+              <Text style={{ fontFamily: "light", fontSize: 12, width: 150 }}>
                 Compartelo con tus amigos y familiares
               </Text>
             </View>
@@ -363,12 +450,7 @@ const FavoritePage = ({ navigation, route }) => {
             alignItems: "center",
             marginTop: -27,
           }}
-          onPress={() => {
-            navigation.navigate("ViewQR", {
-              id: `https://www.portaty.com/share/business?id=${item.businessID}`,
-              name: item.business.name,
-            });
-          }}
+          onPress={getPdf}
         >
           <View style={{ flexDirection: "row", alignItems: "center" }}>
             <View
@@ -379,20 +461,20 @@ const FavoritePage = ({ navigation, route }) => {
                   borderRadius: 10,
                   alignItems: "center",
                   justifyContent: "center",
+                  borderWidth: 0.7,
+                  borderColor: "#1f1f1f",
                 },
-                global.mainBgColor,
+                global.bgYellow,
               ]}
             >
-              <MaterialCommunityIcons
-                name="qrcode-scan"
-                size={25}
-                color="white"
-              />
+              <AntDesign name="qrcode" size={24} color="#1f1f1f" />
             </View>
             <View style={{ marginLeft: 10 }}>
-              <Text style={{ fontFamily: "light", fontSize: 16 }}>Ver QR</Text>
-              <Text style={{ fontFamily: "thin", fontSize: 12, width: 150 }}>
-                Compartelo en formato QR para pegarlo en donde quieras
+              <Text style={{ fontFamily: "medium", fontSize: 15 }}>
+                Descargar QR
+              </Text>
+              <Text style={{ fontFamily: "light", fontSize: 12, width: 150 }}>
+                Descarga el QR del negocio para pegarlo en donde quieras
               </Text>
             </View>
           </View>
@@ -424,15 +506,17 @@ const FavoritePage = ({ navigation, route }) => {
                   borderRadius: 10,
                   alignItems: "center",
                   justifyContent: "center",
+                  borderWidth: 0.7,
+                  borderColor: "#1f1f1f",
                 },
-                global.mainBgColor,
+                global.bgYellow,
               ]}
             >
-              <Feather name="phone-call" size={17} color="white" />
+              <Feather name="phone-call" size={20} color="#1f1f1f" />
             </View>
             <View style={{ marginLeft: 10 }}>
-              <Text style={{ fontFamily: "light", fontSize: 16 }}>Llamar</Text>
-              <Text style={{ fontFamily: "thin", fontSize: 12, width: 150 }}>
+              <Text style={{ fontFamily: "medium", fontSize: 15 }}>Llamar</Text>
+              <Text style={{ fontFamily: "light", fontSize: 12, width: 150 }}>
                 Contacta al negocio directamente
               </Text>
             </View>
@@ -447,10 +531,10 @@ const FavoritePage = ({ navigation, route }) => {
           />
         </TouchableOpacity>
         <View style={{ marginBottom: 80 }}>
-          <Text style={{ fontSize: 22, fontFamily: "thinItalic", padding: 10 }}>
+          <Text style={{ fontSize: 22, fontFamily: "regular", padding: 10 }}>
             Datos
           </Text>
-          <View style={[styles.line, global.bgWhiteSmoke]} />
+          <View style={[styles.line, global.bgMidGray]} />
           <View
             style={{
               flexDirection: "row",
@@ -463,20 +547,20 @@ const FavoritePage = ({ navigation, route }) => {
               {/* <Foundation name="torso-business" size={22} color="#1f1f1f" /> */}
               <Text
                 style={[
-                  { fontFamily: "thinItalic", fontSize: 15 },
-                  global.midGray,
+                  { fontFamily: "lightItalic", fontSize: 13 },
+                  global.black,
                 ]}
               >
                 Razon social
               </Text>
             </View>
             <View style={{ flexDirection: "row", alignItems: "center" }}>
-              <Text style={[{ fontSize: 13, fontFamily: "lightItalic" }]}>
+              <Text style={[{ fontSize: 13, fontFamily: "regular" }]}>
                 {item.business.name}
               </Text>
             </View>
           </View>
-          <View style={[styles.line, global.bgWhiteSmoke]} />
+          <View style={[styles.line, global.bgMidGray]} />
           <View
             style={{
               flexDirection: "row",
@@ -489,20 +573,28 @@ const FavoritePage = ({ navigation, route }) => {
               {/* <FontAwesome5 name="store" size={16} color="#1f1f1f" /> */}
               <Text
                 style={[
-                  { fontFamily: "thinItalic", fontSize: 15 },
-                  global.midGray,
+                  { fontFamily: "lightItalic", fontSize: 13 },
+                  global.black,
                 ]}
               >
                 Actividad laboral
               </Text>
             </View>
             <View style={{ flexDirection: "row", alignItems: "center" }}>
-              <Text style={[{ fontSize: 13, fontFamily: "lightItalic" }]}>
+              <Text
+                style={[
+                  {
+                    fontSize: 13,
+                    fontFamily: "regular",
+                    textTransform: "capitalize",
+                  },
+                ]}
+              >
                 {item.business.activity}
               </Text>
             </View>
           </View>
-          <View style={[styles.line, global.bgWhiteSmoke]} />
+          <View style={[styles.line, global.bgMidGray]} />
           <View
             style={{
               flexDirection: "row",
@@ -515,20 +607,20 @@ const FavoritePage = ({ navigation, route }) => {
               {/* <FontAwesome name="phone" size={20} color="#1f1f1f" /> */}
               <Text
                 style={[
-                  { fontFamily: "thinItalic", fontSize: 15 },
-                  global.midGray,
+                  { fontFamily: "lightItalic", fontSize: 13 },
+                  global.black,
                 ]}
               >
                 Telefono
               </Text>
             </View>
             <View style={{ flexDirection: "row", alignItems: "center" }}>
-              <Text style={[{ fontSize: 13, fontFamily: "lightItalic" }]}>
+              <Text style={[{ fontSize: 13, fontFamily: "regular" }]}>
                 {item.business.phone}
               </Text>
             </View>
           </View>
-          <View style={[styles.line, global.bgWhiteSmoke]} />
+          <View style={[styles.line, global.bgMidGray]} />
           <View
             style={{
               flexDirection: "row",
@@ -541,20 +633,20 @@ const FavoritePage = ({ navigation, route }) => {
               {/* <FontAwesome name="whatsapp" size={22} color="#1f1f1f" /> */}
               <Text
                 style={[
-                  { fontFamily: "thinItalic", fontSize: 15 },
-                  global.midGray,
+                  { fontFamily: "lightItalic", fontSize: 13 },
+                  global.black,
                 ]}
               >
                 WhatsApp
               </Text>
             </View>
             <View style={{ flexDirection: "row", alignItems: "center" }}>
-              <Text style={[{ fontSize: 13, fontFamily: "lightItalic" }]}>
+              <Text style={[{ fontSize: 13, fontFamily: "regular" }]}>
                 {item.business.whatsapp}
               </Text>
             </View>
           </View>
-          <View style={[styles.line, global.bgWhiteSmoke]} />
+          <View style={[styles.line, global.bgMidGray]} />
           <View
             style={{
               flexDirection: "row",
@@ -571,20 +663,20 @@ const FavoritePage = ({ navigation, route }) => {
               /> */}
               <Text
                 style={[
-                  { fontFamily: "thinItalic", fontSize: 15 },
-                  global.midGray,
+                  { fontFamily: "lightItalic", fontSize: 13 },
+                  global.black,
                 ]}
               >
                 Correo
               </Text>
             </View>
             <View style={{ flexDirection: "row", alignItems: "center" }}>
-              <Text style={[{ fontSize: 13, fontFamily: "lightItalic" }]}>
+              <Text style={[{ fontSize: 13, fontFamily: "regular" }]}>
                 {item.business.email}
               </Text>
             </View>
           </View>
-          <View style={[styles.line, global.bgWhiteSmoke]} />
+          <View style={[styles.line, global.bgMidGray]} />
           <View
             style={{
               flexDirection: "row",
@@ -597,8 +689,8 @@ const FavoritePage = ({ navigation, route }) => {
               {/* <MaterialCommunityIcons name="web" size={24} color="#1f1f1f" /> */}
               <Text
                 style={[
-                  { fontFamily: "thinItalic", fontSize: 15 },
-                  global.midGray,
+                  { fontFamily: "lightItalic", fontSize: 13 },
+                  global.black,
                 ]}
               >
                 Web
@@ -607,7 +699,7 @@ const FavoritePage = ({ navigation, route }) => {
             <View style={{ flexDirection: "row", alignItems: "center" }}>
               <Text
                 style={[
-                  { fontSize: 13, fontFamily: "lightItalic", marginRight: 5 },
+                  { fontSize: 13, fontFamily: "regular", marginRight: 5 },
                 ]}
               >
                 Link
@@ -615,7 +707,7 @@ const FavoritePage = ({ navigation, route }) => {
               <AntDesign name="link" size={16} color="#1f1f1f" />
             </View>
           </View>
-          <View style={[styles.line, global.bgWhiteSmoke]} />
+          <View style={[styles.line, global.bgMidGray]} />
           <View
             style={{
               flexDirection: "row",
@@ -628,8 +720,8 @@ const FavoritePage = ({ navigation, route }) => {
               {/* <FontAwesome name="instagram" size={24} color="#1f1f1f" /> */}
               <Text
                 style={[
-                  { fontFamily: "thinItalic", fontSize: 15 },
-                  global.midGray,
+                  { fontFamily: "lightItalic", fontSize: 13 },
+                  global.black,
                 ]}
               >
                 Instagram
@@ -638,7 +730,7 @@ const FavoritePage = ({ navigation, route }) => {
             <View style={{ flexDirection: "row", alignItems: "center" }}>
               <Text
                 style={[
-                  { fontSize: 13, fontFamily: "lightItalic", marginRight: 5 },
+                  { fontSize: 13, fontFamily: "regular", marginRight: 5 },
                 ]}
               >
                 Link
@@ -646,7 +738,7 @@ const FavoritePage = ({ navigation, route }) => {
               <AntDesign name="link" size={16} color="#1f1f1f" />
             </View>
           </View>
-          <View style={[styles.line, global.bgWhiteSmoke]} />
+          <View style={[styles.line, global.bgMidGray]} />
           <View
             style={{
               flexDirection: "row",
@@ -659,8 +751,8 @@ const FavoritePage = ({ navigation, route }) => {
               {/* <FontAwesome name="facebook-square" size={24} color="#1f1f1f" /> */}
               <Text
                 style={[
-                  { fontFamily: "thinItalic", fontSize: 15 },
-                  global.midGray,
+                  { fontFamily: "lightItalic", fontSize: 13 },
+                  global.black,
                 ]}
               >
                 Facebook
@@ -669,7 +761,7 @@ const FavoritePage = ({ navigation, route }) => {
             <View style={{ flexDirection: "row", alignItems: "center" }}>
               <Text
                 style={[
-                  { fontSize: 13, fontFamily: "lightItalic", marginRight: 5 },
+                  { fontSize: 13, fontFamily: "regular", marginRight: 5 },
                 ]}
               >
                 Link
@@ -677,16 +769,105 @@ const FavoritePage = ({ navigation, route }) => {
               <AntDesign name="link" size={16} color="#1f1f1f" />
             </View>
           </View>
-          <View style={[styles.line, global.bgWhiteSmoke]} />
+          <View style={[styles.line, global.bgMidGray]} />
         </View>
-        <TouchableOpacity
+        <Modal
+          animationType="none"
+          transparent={true}
+          visible={open}
+          onRequestClose={() => {
+            setOpen(!open);
+            setImageView(null);
+          }}
+        >
+          <TouchableWithoutFeedback
+            onPress={() => {
+              setOpen(!open);
+              setImageView(null);
+            }}
+          >
+            <View style={styles.modalContainer}>
+              <TouchableWithoutFeedback>
+                <View style={[styles.modalContent]}>
+                  <View style={styles.modalTop}>
+                    <Pressable
+                      onPress={() => {
+                        setOpen(!open);
+                        setImageView(null);
+                      }}
+                    >
+                      <Image
+                        style={{
+                          width: 35,
+                          height: 35,
+                          resizeMode: "contain",
+                        }}
+                        source={require("@/utils/images/arrow_back.png")}
+                      />
+                    </Pressable>
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Image
+                      style={{
+                        width: "100%",
+                        height: "60%",
+                        resizeMode: "cover",
+                        borderRadius: 5,
+                        borderWidth: 0.7,
+                        borderColor: "#1f1f1f",
+                      }}
+                      source={{
+                        uri: imageView?.url ? imageView?.url : imageView?.uri,
+                      }}
+                    />
+                    {imageView?.url && (
+                      <View style={{ flex: 1, paddingVertical: 15 }}>
+                        <View
+                          style={{
+                            flex: 1,
+                            flexDirection: "row",
+                            borderColor: "#1f1f1f",
+                            borderWidth: 0.7,
+                            paddingHorizontal: 10,
+                            borderRadius: 8,
+                            marginTop: 10,
+                          }}
+                        >
+                          <TextInput
+                            value={
+                              imageView.key === 0
+                                ? item?.business?.description
+                                : imageView?.description
+                            }
+                            editable={false}
+                            style={{
+                              flex: 1,
+                              // width: 100,
+                              fontFamily: "regular",
+                              fontSize: 14,
+                              alignItems: "flex-start",
+                              color: "#000",
+                            }}
+                            multiline={true}
+                            numberOfLines={5}
+                          />
+                        </View>
+                      </View>
+                    )}
+                  </View>
+                </View>
+              </TouchableWithoutFeedback>
+            </View>
+          </TouchableWithoutFeedback>
+        </Modal>
+        {/* <TouchableOpacity
           onPress={() => setVisible(true)}
           style={{ marginBottom: 100 }}
         >
           <Text>Modal</Text>
-        </TouchableOpacity>
+        </TouchableOpacity> */}
         <ModalAlert
-          text={`Tu negocio ha sido registrado con exito`}
+          text={`Seguro quieres reportar este negocio?`}
           close={() => setVisible(false)}
           open={visible}
           icon={require("@/utils/images/error.png")}

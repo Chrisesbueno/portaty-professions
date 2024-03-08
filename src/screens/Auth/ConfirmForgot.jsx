@@ -136,13 +136,13 @@ const ConfirmForgot = ({ navigation, route }) => {
             <Text style={{ color: "green" }}>{codeSend}</Text>
             <Text style={{ color: "red" }}>{errorSendCode}</Text>
           </ScrollView>
-          <View style={{ height: 60 }}>
+          <View style={{ height: 65 }}>
             <CustomButton
-              text={isLoading ? <ActivityIndicator color={`#ffffff`}/> : `Confirmar contraseña`}
+              text={isLoading ? <ActivityIndicator color={`#1f1f1f`}/> : `Confirmar contraseña`}
               disabled={isLoading}
               handlePress={handleSubmit(onHandleConfirmCodeNewPassword)}
-              textStyles={[styles.textContinue, global.white]}
-              buttonStyles={[styles.continue, global.mainBgColor]}
+              textStyles={[styles.textContinue, global.black]}
+              buttonStyles={[styles.continue, global.bgYellow]}
             />
           </View>
         </View>

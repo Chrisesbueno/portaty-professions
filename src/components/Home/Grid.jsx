@@ -5,7 +5,6 @@ import ItemGrid from "./ItemGrid";
 
 const Grid = ({ data }) => {
   data.sort((a, b) => b.position - a.position);
-
   return (
     <View style={styles.container}>
       {data.map((post, index) => (

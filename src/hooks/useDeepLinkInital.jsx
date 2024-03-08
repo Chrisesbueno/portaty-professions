@@ -9,24 +9,20 @@ const useDeepLinkInital = (checkRender) => {
   const navigation = useNavigation();
 
   const returnNavigationScreen = async () => {
-    console.log(initalUrl);
     const { path, queryParams } = initalUrl;
     if (path === "share/list" && queryParams?.id) {
-      console.log("TE VAS OARA SHARE/LIST", initalUrl);
       navigation.navigate("ShareNavigator", {
         screen: "ShareListPage",
         params: { id: queryParams?.id },
       });
     }
     if (path === "share/business" && queryParams?.id) {
-      console.log("TE VAS PARA SHARE/BUSINESS", initalUrl);
       navigation.navigate("SharePage", { id: queryParams?.id });
     }
     return setInitalUrl({});
   };
 
   useEffect(() => {
-    console.log("se disparo return ", checkRender);
     if (!checkRender) returnNavigationScreen();
   }, [checkRender]);
 };

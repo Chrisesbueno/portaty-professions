@@ -1,17 +1,17 @@
 {
   "expo": {
     "scheme": "portaty",
-    "name": "portaty-professions",
+    "name": "Portaty",
     "slug": "portaty-professions",
     "owner": "portaty",
-    "version": "0.6.0.4",
+    "version": "0.6.0.8",
     "orientation": "portrait",
-    "icon": "./assets/favicon.png",
+    "icon": "./src/utils/images/portaty.png",
     "userInterfaceStyle": "light",
     "splash": {
-      "image": "./assets/splash.png",
+      "image": "./src/utils/images/splash.png",
       "resizeMode": "contain",
-      "backgroundColor": "#fb8500"
+      "backgroundColor": "#ffb703"
     },
     "updates": {
       "fallbackToCacheTimeout": 0,
@@ -45,27 +45,13 @@
           "data": [
             {
               "scheme": "https",
-              "host": "www.portaty.com",
-              "pathPrefix": "/"
-            },
-            {
-              "scheme": "https",
-              "host": "www.portaty.com",
-              "pathPrefix": "/share/list"
-            },
-            {
-              "scheme": "https",
-              "host": "www.portaty.com",
-              "pathPrefix": "/share/business"
+              "host": "*.portaty.com",
+              "pathPrefix": "/share/*"
             }
           ],
           "category": ["BROWSABLE", "DEFAULT"]
         }
       ],
-      "adaptiveIcon": {
-        "foregroundImage": "./assets/favicon.png",
-        "backgroundColor": "#FFFFFF"
-      },
       "permissions": [
         "android.permission.RECORD_AUDIO",
         "android.permission.READ_CONTACTS",
@@ -81,10 +67,14 @@
         "android.permission.ACCESS_MEDIA_LOCATION"
       ],
       "package": "com.teamportaty.appdev",
-      "versionCode": 50
+      "adaptiveIcon": {
+        "foregroundImage": "./src/utils/images/portaty.png",
+        "backgroundColor": "#FFFFFF"
+      },
+      "versionCode": 54
     },
     "web": {
-      "favicon": "./assets/favicon.png"
+      "favicon": "./src/utils/images/portaty.png"
     },
     "packagerOpts": {
       "config": "metro.config.js",

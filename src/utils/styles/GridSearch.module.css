@@ -15,7 +15,7 @@
   height: 110px;
   margin-bottom: 3px;
   border-radius: 2px;
-  border: 0.5px solid #5e2129;
+  border: 0.7px solid #1f1f1f;
 }
 .bigRightColumn,
 .bigLeftColumn,
@@ -25,8 +25,8 @@
   height: 223px;
   width: 100%;
   margin-bottom: 1%;
-  border-radius: 2px;
-  border: 0.5px solid #5e2129;
+  border-radius: 3px;
+  border: 0.8px solid #1f1f1f;
 }
 /* Big Right Grid */
 

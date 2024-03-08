@@ -44,10 +44,10 @@ module.exports = StyleSheet.create({
     backgroundColor: '#1f1f1f'
   },
   mainColor: {
-    color: '#fb8500'
+    color: '#ffb703'
   },
   mainBgColor: {
-    backgroundColor: '#fb8500'
+    backgroundColor: '#ffb703'
   },
   yellow: {
     color: '#ffb703'

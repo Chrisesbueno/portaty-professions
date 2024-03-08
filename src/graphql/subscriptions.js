@@ -1,16 +1,16 @@
 /* eslint-disable */
 // this is an auto generated file. This will be overwritten
 
-export const onCreateTags = /* GraphQL */ `
-  subscription OnCreateTags($filter: ModelSubscriptionTagsFilterInput) {
-    onCreateTags(filter: $filter) {
+export const onCreateArea = /* GraphQL */ `
+  subscription OnCreateArea($filter: ModelSubscriptionAreaFilterInput) {
+    onCreateArea(filter: $filter) {
       id
       name
-      objects {
+      activities {
         items {
           id
-          tagsId
-          activityId
+          name
+          areaID
           createdAt
           updatedAt
           __typename
@@ -24,16 +24,16 @@ export const onCreateTags = /* GraphQL */ `
     }
   }
 `;
-export const onUpdateTags = /* GraphQL */ `
-  subscription OnUpdateTags($filter: ModelSubscriptionTagsFilterInput) {
-    onUpdateTags(filter: $filter) {
+export const onUpdateArea = /* GraphQL */ `
+  subscription OnUpdateArea($filter: ModelSubscriptionAreaFilterInput) {
+    onUpdateArea(filter: $filter) {
       id
       name
-      objects {
+      activities {
         items {
           id
-          tagsId
-          activityId
+          name
+          areaID
           createdAt
           updatedAt
           __typename
@@ -47,16 +47,16 @@ export const onUpdateTags = /* GraphQL */ `
     }
   }
 `;
-export const onDeleteTags = /* GraphQL */ `
-  subscription OnDeleteTags($filter: ModelSubscriptionTagsFilterInput) {
-    onDeleteTags(filter: $filter) {
+export const onDeleteArea = /* GraphQL */ `
+  subscription OnDeleteArea($filter: ModelSubscriptionAreaFilterInput) {
+    onDeleteArea(filter: $filter) {
       id
       name
-      objects {
+      activities {
         items {
           id
-          tagsId
-          activityId
+          name
+          areaID
           createdAt
           updatedAt
           __typename
@@ -75,16 +75,16 @@ export const onCreateActivity = /* GraphQL */ `
     onCreateActivity(filter: $filter) {
       id
       name
-      tags {
-        items {
-          id
-          tagsId
-          activityId
-          createdAt
-          updatedAt
+      areaID
+      area {
+        id
+        name
+        activities {
+          nextToken
           __typename
         }
-        nextToken
+        createdAt
+        updatedAt
         __typename
       }
       createdAt
@@ -98,16 +98,16 @@ export const onUpdateActivity = /* GraphQL */ `
     onUpdateActivity(filter: $filter) {
       id
       name
-      tags {
-        items {
-          id
-          tagsId
-          activityId
-          createdAt
-          updatedAt
+      areaID
+      area {
+        id
+        name
+        activities {
+          nextToken
           __typename
         }
-        nextToken
+        createdAt
+        updatedAt
         __typename
       }
       createdAt
@@ -121,119 +121,11 @@ export const onDeleteActivity = /* GraphQL */ `
     onDeleteActivity(filter: $filter) {
       id
       name
-      tags {
-        items {
-          id
-          tagsId
-          activityId
-          createdAt
-          updatedAt
-          __typename
-        }
-        nextToken
-        __typename
-      }
-      createdAt
-      updatedAt
-      __typename
-    }
-  }
-`;
-export const onCreateActivityTags = /* GraphQL */ `
-  subscription OnCreateActivityTags(
-    $filter: ModelSubscriptionActivityTagsFilterInput
-  ) {
-    onCreateActivityTags(filter: $filter) {
-      id
-      tagsId
-      activityId
-      tags {
+      areaID
+      area {
         id
         name
-        objects {
-          nextToken
-          __typename
-        }
-        createdAt
-        updatedAt
-        __typename
-      }
-      activity {
-        id
-        name
-        tags {
-          nextToken
-          __typename
-        }
-        createdAt
-        updatedAt
-        __typename
-      }
-      createdAt
-      updatedAt
-      __typename
-    }
-  }
-`;
-export const onUpdateActivityTags = /* GraphQL */ `
-  subscription OnUpdateActivityTags(
-    $filter: ModelSubscriptionActivityTagsFilterInput
-  ) {
-    onUpdateActivityTags(filter: $filter) {
-      id
-      tagsId
-      activityId
-      tags {
-        id
-        name
-        objects {
-          nextToken
-          __typename
-        }
-        createdAt
-        updatedAt
-        __typename
-      }
-      activity {
-        id
-        name
-        tags {
-          nextToken
-          __typename
-        }
-        createdAt
-        updatedAt
-        __typename
-      }
-      createdAt
-      updatedAt
-      __typename
-    }
-  }
-`;
-export const onDeleteActivityTags = /* GraphQL */ `
-  subscription OnDeleteActivityTags(
-    $filter: ModelSubscriptionActivityTagsFilterInput
-  ) {
-    onDeleteActivityTags(filter: $filter) {
-      id
-      tagsId
-      activityId
-      tags {
-        id
-        name
-        objects {
-          nextToken
-          __typename
-        }
-        createdAt
-        updatedAt
-        __typename
-      }
-      activity {
-        id
-        name
-        tags {
+        activities {
           nextToken
           __typename
         }
@@ -277,9 +169,12 @@ export const onCreateUsers = /* GraphQL */ `
         items {
           id
           userID
+          status
           identityID
           name
           image
+          images
+          thumbnail
           email
           phone
           whatsapp
@@ -288,6 +183,8 @@ export const onCreateUsers = /* GraphQL */ `
           page
           activity
           tags
+          description
+          prefer
           createdAt
           updatedAt
           owner
@@ -333,9 +230,12 @@ export const onUpdateUsers = /* GraphQL */ `
         items {
           id
           userID
+          status
           identityID
           name
           image
+          images
+          thumbnail
           email
           phone
           whatsapp
@@ -344,6 +244,8 @@ export const onUpdateUsers = /* GraphQL */ `
           page
           activity
           tags
+          description
+          prefer
           createdAt
           updatedAt
           owner
@@ -389,9 +291,12 @@ export const onDeleteUsers = /* GraphQL */ `
         items {
           id
           userID
+          status
           identityID
           name
           image
+          images
+          thumbnail
           email
           phone
           whatsapp
@@ -400,6 +305,8 @@ export const onDeleteUsers = /* GraphQL */ `
           page
           activity
           tags
+          description
+          prefer
           createdAt
           updatedAt
           owner
@@ -443,9 +350,12 @@ export const onCreateBusiness = /* GraphQL */ `
         updatedAt
         __typename
       }
+      status
       identityID
       name
       image
+      images
+      thumbnail
       email
       phone
       whatsapp
@@ -473,6 +383,8 @@ export const onCreateBusiness = /* GraphQL */ `
         nextToken
         __typename
       }
+      description
+      prefer
       createdAt
       updatedAt
       owner
@@ -508,9 +420,12 @@ export const onUpdateBusiness = /* GraphQL */ `
         updatedAt
         __typename
       }
+      status
       identityID
       name
       image
+      images
+      thumbnail
       email
       phone
       whatsapp
@@ -538,6 +453,8 @@ export const onUpdateBusiness = /* GraphQL */ `
         nextToken
         __typename
       }
+      description
+      prefer
       createdAt
       updatedAt
       owner
@@ -573,9 +490,12 @@ export const onDeleteBusiness = /* GraphQL */ `
         updatedAt
         __typename
       }
+      status
       identityID
       name
       image
+      images
+      thumbnail
       email
       phone
       whatsapp
@@ -603,6 +523,8 @@ export const onDeleteBusiness = /* GraphQL */ `
         nextToken
         __typename
       }
+      description
+      prefer
       createdAt
       updatedAt
       owner
@@ -633,9 +555,12 @@ export const onCreateFavorites = /* GraphQL */ `
           updatedAt
           __typename
         }
+        status
         identityID
         name
         image
+        images
+        thumbnail
         email
         phone
         whatsapp
@@ -653,6 +578,8 @@ export const onCreateFavorites = /* GraphQL */ `
           nextToken
           __typename
         }
+        description
+        prefer
         createdAt
         updatedAt
         owner
@@ -710,9 +637,12 @@ export const onUpdateFavorites = /* GraphQL */ `
           updatedAt
           __typename
         }
+        status
         identityID
         name
         image
+        images
+        thumbnail
         email
         phone
         whatsapp
@@ -730,6 +660,8 @@ export const onUpdateFavorites = /* GraphQL */ `
           nextToken
           __typename
         }
+        description
+        prefer
         createdAt
         updatedAt
         owner
@@ -787,9 +719,12 @@ export const onDeleteFavorites = /* GraphQL */ `
           updatedAt
           __typename
         }
+        status
         identityID
         name
         image
+        images
+        thumbnail
         email
         phone
         whatsapp
@@ -807,6 +742,8 @@ export const onDeleteFavorites = /* GraphQL */ `
           nextToken
           __typename
         }
+        description
+        prefer
         createdAt
         updatedAt
         owner
@@ -850,11 +787,20 @@ export const onCreateComplaints = /* GraphQL */ `
       id
       userID
       businessID
-      description
       status
+      reasonID
+      reason {
+        id
+        name
+        createdAt
+        updatedAt
+        owner
+        __typename
+      }
+      description
+      owner
       createdAt
       updatedAt
-      owner
       __typename
     }
   }
@@ -868,11 +814,20 @@ export const onUpdateComplaints = /* GraphQL */ `
       id
       userID
       businessID
-      description
       status
+      reasonID
+      reason {
+        id
+        name
+        createdAt
+        updatedAt
+        owner
+        __typename
+      }
+      description
+      owner
       createdAt
       updatedAt
-      owner
       __typename
     }
   }
@@ -886,8 +841,62 @@ export const onDeleteComplaints = /* GraphQL */ `
       id
       userID
       businessID
-      description
       status
+      reasonID
+      reason {
+        id
+        name
+        createdAt
+        updatedAt
+        owner
+        __typename
+      }
+      description
+      owner
+      createdAt
+      updatedAt
+      __typename
+    }
+  }
+`;
+export const onCreateReasonComplaints = /* GraphQL */ `
+  subscription OnCreateReasonComplaints(
+    $filter: ModelSubscriptionReasonComplaintsFilterInput
+    $owner: String
+  ) {
+    onCreateReasonComplaints(filter: $filter, owner: $owner) {
+      id
+      name
+      createdAt
+      updatedAt
+      owner
+      __typename
+    }
+  }
+`;
+export const onUpdateReasonComplaints = /* GraphQL */ `
+  subscription OnUpdateReasonComplaints(
+    $filter: ModelSubscriptionReasonComplaintsFilterInput
+    $owner: String
+  ) {
+    onUpdateReasonComplaints(filter: $filter, owner: $owner) {
+      id
+      name
+      createdAt
+      updatedAt
+      owner
+      __typename
+    }
+  }
+`;
+export const onDeleteReasonComplaints = /* GraphQL */ `
+  subscription OnDeleteReasonComplaints(
+    $filter: ModelSubscriptionReasonComplaintsFilterInput
+    $owner: String
+  ) {
+    onDeleteReasonComplaints(filter: $filter, owner: $owner) {
+      id
+      name
       createdAt
       updatedAt
       owner

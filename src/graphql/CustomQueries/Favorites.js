@@ -29,9 +29,12 @@ export const userByEmail = /* GraphQL */ `
               userID
               name
               image
+              images
+              thumbnail
               email
               phone
               whatsapp
+              description
               instagram
               facebook
               page
@@ -100,6 +103,7 @@ export const favoritesByBusinessID = /* GraphQL */ `
           instagram
           facebook
           page
+          description
           activity
           tags
           createdAt
@@ -175,6 +179,53 @@ export const getUsers = /* GraphQL */ `
           }
         }
       }
+    }
+  }
+`;
+
+export const getBusiness = /* GraphQL */ `
+  query GetBusiness($id: ID!) {
+    getBusiness(id: $id) {
+      id
+      userID
+      identityID
+      name
+      image
+      images
+      thumbnail
+      email
+      phone
+      whatsapp
+      instagram
+      description
+      facebook
+      page
+      coordinates {
+        lat
+        lon
+      }
+      activity
+      tags
+      favorites {
+        items {
+          id
+          businessID
+          position
+        }
+        nextToken
+      }
+      createdAt
+      updatedAt
+    }
+  }
+`;
+
+export const getPostBusiness = /* GraphQL */ `
+  query GetBusiness($id: ID!) {
+    getBusiness(id: $id) {
+      id
+      name
+      thumbnail
     }
   }
 `;

@@ -24,9 +24,9 @@
   }
   .modalText {
     /* font-weight: 600; */
-    font-family: "regular";
-    font-size: 14px;
-    margin-left: 5px;
+    font-family: "medium";
+    font-size: 12px;
+    /* margin-left: 5px; */
   }
   .modalContent {
     background-color: white;
@@ -34,6 +34,7 @@
     padding: 20px;
     width: 300px;
     height: 530px;
+    border: 1px solid #1f1f1f;
   }
   .modalTextSelect {
     font-family: "light";

@@ -16,7 +16,6 @@ import * as customSearch from "@/graphql/CustomQueries/Search";
 import CustomSelect from "@/components/CustomSelect";
 import styles from "@/utils/styles/Profile.module.css";
 import CustomButton from "@/components/CustomButton";
-
 import {
   FontAwesome5,
   MaterialCommunityIcons,
@@ -36,7 +35,6 @@ const Profile = ({ route, navigation }) => {
   const [editActive, setEditActive] = useState(false);
   const [isSave, setIsSave] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  console.log("PROFILE: ", user);
   const onShare = async () => {
     try {
       await Share.share({
@@ -52,20 +50,13 @@ const Profile = ({ route, navigation }) => {
   }, [name, lastName]);
 
   const onCheckChange = () => {
-    // si hubo un cambio de informacion habilitar boton
-    console.log(name?.toLowerCase()?.trim());
-    console.log(lastName?.toLowerCase().trim());
-    console.log(user?.name?.toLowerCase().trim());
-    console.log(user?.lastName?.toLowerCase().trim());
     if (
       name?.toLowerCase()?.trim() !== user?.name?.toLowerCase().trim() ||
       lastName?.toLowerCase().trim() !==
         user["custom:lastName"]?.toLowerCase().trim()
     ) {
-      console.log("hubo cambio");
       setIsSave(true);
     } else {
-      console.log("no hubo cambio");
       setIsSave(false);
     }
   };
@@ -74,7 +65,6 @@ const Profile = ({ route, navigation }) => {
     setIsLoading(true);
     const data = await Auth.currentAuthenticatedUser();
     const tableID = data?.attributes["custom:userTableID"];
-    console.log("ID DE TABLAA  CAMBAIR: ", tableID);
 
     try {
       // Cambiar en Cognito
@@ -82,7 +72,6 @@ const Profile = ({ route, navigation }) => {
         name: name,
         "custom:lastName": lastName,
       });
-      navigation.goBack();
       // Cambiar en tabla
       const result = await API.graphql({
         query: mutations.updateUsers,
@@ -95,13 +84,14 @@ const Profile = ({ route, navigation }) => {
           },
         },
       });
-      console.log("ACTUALIZAR: ", result);
     } catch (error) {
       const { message } = new Error(error);
       console.log("ERROR AL ACTUALIZAR ATRIBUTO IDENTITY ID: ", message);
     }
     setIsLoading(false);
+    setEditActive(!editActive)
   };
+
 
   return (
     <View
@@ -121,12 +111,12 @@ const Profile = ({ route, navigation }) => {
             marginBottom: 20,
           }}
         >
-          <Text style={{ fontSize: 26, fontFamily: "thin" }}>0</Text>
-          <Text style={{ fontSize: 22, fontFamily: "thin" }}>
+          <Text style={{ fontSize: 24, fontFamily: "medium" }}>0</Text>
+          <Text style={{ fontSize: 20, fontFamily: "light" }}>
             Mis Favoritos
           </Text>
         </View>
-        <View style={[styles.line, global.bgWhiteSmoke]} />
+        <View style={[styles.line, global.bgMidGray]} />
         <TouchableOpacity
           style={{
             padding: 20,
@@ -145,17 +135,19 @@ const Profile = ({ route, navigation }) => {
                   borderRadius: 10,
                   alignItems: "center",
                   justifyContent: "center",
+                  borderColor: '#1f1f1f',
+                  borderWidth: 0.7
                 },
-                global.mainBgColor,
+                global.bgYellow,
               ]}
             >
-              <EvilIcons name="share-google" size={25} color="white" />
+              <EvilIcons name="share-google" size={30} color="#1f1f1f" />
             </View>
             <View style={{ marginLeft: 10 }}>
-              <Text style={{ fontFamily: "light", fontSize: 16 }}>
+              <Text style={{ fontFamily: "medium", fontSize: 15 }}>
                 Compartir tus favoritos
               </Text>
-              <Text style={{ fontFamily: "thin", fontSize: 12, width: 150 }}>
+              <Text style={{ fontFamily: "regular", fontSize: 12, width: 150 }}>
                 Comparte con tus amigos y familiares la lista de tus favoritos
               </Text>
             </View>
@@ -187,15 +179,17 @@ const Profile = ({ route, navigation }) => {
                   borderRadius: 10,
                   alignItems: "center",
                   justifyContent: "center",
+                  borderColor: '#1f1f1f',
+                  borderWidth: 0.7
                 },
-                global.mainBgColor,
+                global.bgYellow,
               ]}
             >
-              <FontAwesome name="edit" size={20} color="white" />
+              <FontAwesome name="edit" size={21} color="#1f1f1f" />
             </View>
             <View style={{ marginLeft: 10 }}>
-              <Text style={{ fontFamily: "light", fontSize: 16 }}>Editar</Text>
-              <Text style={{ fontFamily: "thin", fontSize: 12, width: 150 }}>
+              <Text style={{ fontFamily: "medium", fontSize: 15 }}>Editar</Text>
+              <Text style={{ fontFamily: "regular", fontSize: 12, width: 150 }}>
                 Actualiza tus datos
               </Text>
             </View>
@@ -203,7 +197,7 @@ const Profile = ({ route, navigation }) => {
           <Switch
             trackColor={{
               false: "#767577",
-              true: "#FF8811",
+              true: "#ffb703",
             }}
             thumbColor={editActive ? "#FFFFFF" : "#f4f3f4"}
             onValueChange={() => setEditActive(!editActive)}
@@ -211,10 +205,10 @@ const Profile = ({ route, navigation }) => {
           />
         </TouchableOpacity>
         <View style={{ marginBottom: 80 }}>
-          <Text style={{ fontSize: 22, fontFamily: "thinItalic", padding: 10 }}>
+          <Text style={{ fontSize: 22, fontFamily: "lightItalic", padding: 10 }}>
             Datos personales
           </Text>
-          <View style={[styles.line, global.bgWhiteSmoke]} />
+          <View style={[styles.line, global.bgMidGray]} />
           <View
             style={{
               flexDirection: "row",
@@ -228,7 +222,7 @@ const Profile = ({ route, navigation }) => {
               <Text
                 style={[
                   { fontFamily: "lightItalic", fontSize: 15 },
-                  global.midGray,
+                  global.black,
                 ]}
               >
                 Nombre
@@ -240,11 +234,11 @@ const Profile = ({ route, navigation }) => {
                 value={name}
                 style={[
                   {
-                    fontSize: 13,
-                    fontFamily: "lightItalic",
+                    fontSize: 12,
+                    fontFamily: "regular",
                     padding: 10,
                     borderColor: "#1f1f1f",
-                    borderWidth: 0.3,
+                    borderWidth: 0.7,
                     borderRadius: 4,
                   },
                   editActive ? global.bgWhite : global.bgWhiteSoft,
@@ -253,7 +247,7 @@ const Profile = ({ route, navigation }) => {
               />
             </View>
           </View>
-          <View style={[styles.line, global.bgWhiteSmoke]} />
+          <View style={[styles.line, global.bgMidGray]} />
           <View
             style={{
               flexDirection: "row",
@@ -267,7 +261,7 @@ const Profile = ({ route, navigation }) => {
               <Text
                 style={[
                   { fontFamily: "lightItalic", fontSize: 15 },
-                  global.midGray,
+                  global.black,
                 ]}
               >
                 Apellido
@@ -279,11 +273,11 @@ const Profile = ({ route, navigation }) => {
                 value={lastName}
                 style={[
                   {
-                    fontSize: 13,
-                    fontFamily: "lightItalic",
+                    fontSize: 12,
+                    fontFamily: "regular",
                     padding: 10,
                     borderColor: "#1f1f1f",
-                    borderWidth: 0.3,
+                    borderWidth: 0.7,
                     borderRadius: 4,
                   },
                   editActive ? global.bgWhite : global.bgWhiteSoft,
@@ -292,7 +286,7 @@ const Profile = ({ route, navigation }) => {
               />
             </View>
           </View>
-          <View style={[styles.line, global.bgWhiteSmoke]} />
+          <View style={[styles.line, global.bgMidGray]} />
           <View
             style={{
               flexDirection: "row",
@@ -310,7 +304,7 @@ const Profile = ({ route, navigation }) => {
               <Text
                 style={[
                   { fontFamily: "lightItalic", fontSize: 15 },
-                  global.midGray,
+                  global.black,
                 ]}
               >
                 Correo
@@ -321,8 +315,8 @@ const Profile = ({ route, navigation }) => {
                 value={email}
                 style={[
                   {
-                    fontSize: 13,
-                    fontFamily: "lightItalic",
+                    fontSize: 12,
+                    fontFamily: "regular",
                     padding: 10,
                     borderColor: "#1f1f1f",
                     borderWidth: 0.3,
@@ -334,22 +328,31 @@ const Profile = ({ route, navigation }) => {
               />
             </View>
           </View>
-          <View style={{ height: 60 }}>
+          <View
+            style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
+          >
             {editActive && (
               <CustomButton
-                text={isLoading ? <ActivityIndicator /> : "Guardar"}
+                text={
+                  isLoading ? <ActivityIndicator color={`#1f1f1f`} /> : "Guardar"
+                }
                 handlePress={onSaveChange}
-                textStyles={[global.white]}
+                textStyles={[
+                  global.black,
+                  { fontFamily: "bold", marginLeft: 25 },
+                ]}
                 buttonStyles={[
                   {
-                    paddingVertical: 10,
-                    margin: 10,
-                    marginHorizontal: 80,
+                    width: 200,
+                    height: 50,
                     borderRadius: 6,
                     flexDirection: "row",
                     justifyContent: "center",
+                    alignItems: "center",
+                    borderColor: '#1f1f1f',
+                    borderWidth: 0.7
                   },
-                  isSave ? global.mainBgColor : global.bgWhiteSoft,
+                  global.bgYellow,
                   ,
                 ]}
                 disabled={!isSave && isLoading}

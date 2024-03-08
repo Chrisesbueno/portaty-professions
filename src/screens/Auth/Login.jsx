@@ -21,7 +21,8 @@ import { Alert } from "react-native";
 import ModalAlert from "@/components/ModalAlert";
 
 const Login = ({ navigation }) => {
-  const { control, handleSubmit } = useForm();
+  const { control, handleSubmit, watch } = useForm();
+  const emailForm = watch("email");
   const global = require("@/utils/styles/global.js");
   const EMAIL_REGEX = /^\w+([.-_+]?\w+)*@\w+([.-]?\w+)*(\.\w{2,10})+$/;
   const [errorActive, setErrorActive] = useState("");
@@ -38,7 +39,8 @@ const Login = ({ navigation }) => {
       switch (error.message) {
         case "User is not confirmed.":
           setError(`Usuario: ${email} no confirmado, por favor confirmar`);
-          setVisible(true)
+          setVisible(true);
+
           break;
 
         case "User does not exist.":
@@ -61,7 +63,7 @@ const Login = ({ navigation }) => {
   const CloseModal = () => {
     navigation.navigate("Register_App", {
       screen: "ConfirmRegister",
-      params: { email: email },
+      params: { email: emailForm },
     });
     setVisible(false);
   };
@@ -83,7 +85,12 @@ const Login = ({ navigation }) => {
         >
           <View style={styles.content}>
             <Text style={styles.title}>{es.authentication.login.title}</Text>
-            <Image
+           
+            <Text style={styles.name}>{es.authentication.login.name}</Text>
+            {errorActive && (
+              <Text style={styles.errorInputMain}>{errorActive}</Text>
+            )}
+             <Image
               style={{
                 width: 300,
                 height: 100,
@@ -92,10 +99,6 @@ const Login = ({ navigation }) => {
               }}
               source={require("@/utils/images/welcome.png")}
             />
-            <Text style={styles.name}>{es.authentication.login.name}</Text>
-            {errorActive && (
-              <Text style={styles.errorInputMain}>{errorActive}</Text>
-            )}
             <CustomInput
               control={control}
               name={`email`}
@@ -105,12 +108,12 @@ const Login = ({ navigation }) => {
                 label: styles.labelInput,
                 error: styles.errorInput,
                 placeholder: styles.placeholder,
-                input: [styles.inputContainer, global.bgWhiteSoft],
+                input: [styles.inputContainer, global.bgWhite],
               }}
               text={`Correo electronico`}
               // icon={require("@/utils/images/email.png")}
               rules={{
-                required: es.authentication.register.email.rules,
+                required: `Requerido`,
               }}
             />
             <CustomInput
@@ -122,8 +125,8 @@ const Login = ({ navigation }) => {
                 label: [styles.labelInput, global.topGray],
                 error: styles.errorInput,
                 placeholder: styles.placeholder,
-                input: [styles.inputContainer, global.bgWhiteSoft],
-                security: styles.security
+                input: [styles.inputContainer, global.bgWhite],
+                security: styles.security,
               }}
               text={`Contraseña`}
               // icon={require("@/utils/images/password.png")}
@@ -140,15 +143,15 @@ const Login = ({ navigation }) => {
         </ScrollView>
       </TouchableWithoutFeedback>
       <View style={styles.panel}>
-        <View style={{ height: 60 }}>
+        <View style={{ height: 65 }}>
           <CustomButton
             text={
-              isLoading ? <ActivityIndicator /> : es.authentication.login.button
+              isLoading ? <ActivityIndicator color={'#1f1f1f'}/> : es.authentication.login.button
             }
             disabled={isLoading}
             handlePress={handleSubmit(onHandleLogin)}
-            textStyles={[styles.textLogin, global.white]}
-            buttonStyles={[styles.login, global.mainBgColor]}
+            textStyles={[styles.textLogin, global.black]}
+            buttonStyles={[styles.login, global.bgYellow]}
           />
         </View>
 
@@ -167,11 +170,11 @@ const Login = ({ navigation }) => {
         </View>
       </View>
       <ModalAlert
-            text={error}
-            close={() => CloseModal()}
-            open={visible}
-            icon={require("@/utils/images/alert.png")}
-          />
+        text={error}
+        close={() => CloseModal()}
+        open={visible}
+        icon={require("@/utils/images/alert.png")}
+      />
     </KeyboardAvoidingView>
   );
 };

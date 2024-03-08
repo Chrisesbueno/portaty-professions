@@ -16,11 +16,13 @@
 .modalTop {
   flex-direction: row;
   align-items: center;
-  margin-bottom: 10px;
+  border: 1px solid #1f1f1f;
+  background-color: #ffb703;
+  /* margin-bottom: 10px; */
 }
 .modalText {
   /* font-weight: 600; */
-  font-family: "regular";
+  font-family: "bold";
   font-size: 14px;
   margin-left: 5px;
 }
@@ -41,10 +43,18 @@
 .textInputTag {
   flex: 1;
   /* margin-left: 10px; */
-  color: #8c9199cb;
+  color: #1f1f1f;
   /* text-transform: capitalize; */
   font-size: 13px;
-  font-family: "light";
+  font-family: "medium";
+}
+.textInputTagError {
+  flex: 1;
+  /* margin-left: 10px; */
+  color: red;
+  /* text-transform: capitalize; */
+  font-size: 13px;
+  font-family: "medium";
 }
 .inputContainerTag {
   flex-direction: row;
@@ -72,8 +82,8 @@
   margin: -6px 2px;
 }
 .textTag {
-  font-size: 13px;
-  font-family: "light";
+  font-size: 12px;
+  font-family: "medium";
   /* text-transform:none; */
 }
 

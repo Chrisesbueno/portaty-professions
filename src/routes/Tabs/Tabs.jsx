@@ -38,7 +38,7 @@ function MyTabBar({ state, descriptors, navigation }) {
     <View
       style={[
         styles.tabBarContainer,
-        global.mainBgColor,
+        global.bgYellow,
         { width: TAB_BAR_WIDTH, bottom: MARGIN },
       ]}
     >
@@ -52,7 +52,7 @@ function MyTabBar({ state, descriptors, navigation }) {
         <Animated.View
           style={[
             styles.slidingTab,
-            global.mainBgColor,
+            global.bgYellow,
             { transform: [{ translateX }] },
           ]}
         />
@@ -133,20 +133,21 @@ const TabIcon = ({ isFocused, tabIcon, label, index }) => {
       <Animated.View style={{ transform: [{ translateY }] }}>
         <Image
           style={{
-            width: 33,
-            height: 33,
+            width: 25,
+            height: 25,
             resizeMode: "contain",
-            marginTop: isFocused ? -2 : 0,
+            // marginTop: isFocused ? -5 : 0,
+            marginBottom: 10
           }}
           source={isFocused ? tabIcon.activeIcon : tabIcon.inActiveIcon}
         />
       </Animated.View>
       <Text
         style={{
-          color: isFocused ? "#ffffff" : "#ffffff",
+          color: isFocused ? "#1f1f1f" : "#1f1f1f",
           fontSize: 13,
-          fontFamily: "regular",
-          marginTop: isFocused ? 0 : -3,
+          fontFamily: "medium",
+          marginTop: isFocused ? -10 : -10,
         }}
       >
         {label}

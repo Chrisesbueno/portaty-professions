@@ -14,9 +14,8 @@ import { Ionicons } from "@expo/vector-icons";
 const ItemList = ({ data, number, styled }) => {
   const navigation = useNavigation();
   const [save, setSave] = useState("");
-  const [selectKey, setSelectKey] = useState("");
   const [loading, setLoading] = useState(false);
-  console.log(data.business.image);
+
   const onDeleteFavorite = async () => {
     const favorites = await API.graphql({
       query: customFavorites.deleteFavorites,
@@ -27,27 +26,14 @@ const ItemList = ({ data, number, styled }) => {
       },
       authMode: "AMAZON_COGNITO_USER_POOLS",
     });
-    console.log(favorites);
     setSave("");
   };
-  const getImage = async () => {
-    setLoading(true);
-    try {
-      await Storage.get(data.business.image, {
-        level: "protected",
-        identityId: data.business.identityID,
-      }).then((res) => setSelectKey(res));
-      setLoading(false);
-    } catch (error) {
-      console.log("toy en list", error);
-    }
-  };
+
   const fetchFavorite = () => {
     setSave(data.id);
   };
   useLayoutEffect(() => {
     fetchFavorite();
-    getImage();
   }, []);
   if (save)
     return (
@@ -57,74 +43,28 @@ const ItemList = ({ data, number, styled }) => {
           navigation.navigate("FavoritePage", {
             data: {
               item: data,
-              image: selectKey,
+              image: JSON.parse(data.business.images[0]).url,
             },
           })
         }
       >
         <View
           style={{
-            justifyContent: "space-between",
+            // justifyContent: "space-between",
             marginLeft: 10,
           }}
         >
-          {!selectKey ? (
-            <View
-              style={{
-                flex: 1,
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-            >
-              <ActivityIndicator size={`small`} color="fb8500" />
-            </View>
-          ) : (
             <Image
               style={{
-                width: "100%",
-                height: "100%",
+                width: 130,
+                height: 130,
                 resizeMode: "cover",
-                borderRadius: 2,
+                borderRadius: 4,
+                borderColor: '#1f1f1f',
+                borderWidth: 0.7
               }}
-              source={{ uri: selectKey }}
+              source={{ uri: data?.business?.thumbnail }}
             />
-          )}
-          <View
-            style={{
-              flexDirection: "row",
-              justifyContent: "space-between",
-              marginTop: 5,
-              // paddingBottom: 5
-            }}
-          >
-            <TouchableOpacity
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-              }}
-            >
-              <Ionicons name="lock-open-outline" size={12} color="black" />
-              <Text
-                style={{ fontSize: 12, fontFamily: "light", marginLeft: 1 }}
-              >
-                Anclar
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-              }}
-              onPress={onDeleteFavorite}
-            >
-              <Ionicons name="trash-outline" size={12} color="black" />
-              <Text
-                style={{ fontSize: 12, fontFamily: "light", marginLeft: 1 }}
-              >
-                Eliminar
-              </Text>
-            </TouchableOpacity>
-          </View>
         </View>
 
         <View
@@ -144,18 +84,18 @@ const ItemList = ({ data, number, styled }) => {
             }}
           >
             <View>
-              <Text style={{ fontSize: 13, fontFamily: "light" }}>
-                Razon Social
+              <Text style={{ fontSize: 13, fontFamily: "medium", color: '#1f1f1f' }}>
+                Nombre
               </Text>
-              <Text style={{ fontSize: 12, fontFamily: "thin" }}>
+              <Text style={{ fontSize: 12, fontFamily: "light", color: '#1f1f1f'  }}>
                 {data.business.name}
               </Text>
             </View>
             <View style={{}}>
-              <Text style={{ fontSize: 13, fontFamily: "light" }}>
-                Actividad Laboral
+              <Text style={{ fontSize: 13, fontFamily: "medium", color: '#1f1f1f'  }}>
+                Actividad laboral
               </Text>
-              <Text style={{ fontSize: 12, fontFamily: "thin" }}>
+              <Text style={{ fontSize: 12, fontFamily: "light", color: '#1f1f1f', textTransform:"capitalize"  }}>
                 {data.business.activity}
               </Text>
             </View>
@@ -164,13 +104,14 @@ const ItemList = ({ data, number, styled }) => {
             style={{
               flexDirection: "row",
               alignItems: "flex-end",
-              marginRight: 10,
+              justifyContent: 'center',
               position: "relative",
-              top: 10,
+              top: 18,
+              right: 7
             }}
           >
-            <Ionicons name="eye-outline" size={12} color="black" />
-            <Text style={{ fontSize: 12, fontFamily: "light", marginLeft: 1 }}>
+            <Ionicons name="eye-outline" size={16} color="#1f1f1f" />
+            <Text style={{ fontSize: 13, fontFamily: "medium", marginLeft: 2, marginBottom: 1 }}>
               Ver
             </Text>
           </TouchableOpacity>

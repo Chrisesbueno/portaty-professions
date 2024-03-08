@@ -10,7 +10,6 @@ const HomeHeader = () => {
   const [inputFavorites, setInputFavorites] = useRecoilState(inputFavoritesSearch);
   const handleKeyPress = (input) => {
     setInputFavorites(input.trim())
-    console.log(input)
   }
   return (
     <View style={[styles.home, global.bgWhite]}>
@@ -43,27 +42,28 @@ const HomeHeader = () => {
         /> */}
       </View>
 
-      {/* <TouchableOpacity
-        style={[styles.content, global.bgWhiteSoft]}
+      <TouchableOpacity
+        style={[styles.content, global.bgWhite]}
         activeOpacity={1}
       >
         <Image
           style={{
-            width: 30,
-            height: 30,
+            width: 22,
+            height: 22,
             resizeMode: "cover",
           }}
-          source={require("@/utils/images/search.png")}
+          source={require("@/utils/images/search_white.png")}
         />
         <TextInput
-          placeholder={"Buscar Favoritos"}
+          placeholder={"Buscar favoritos"}
           defaultValue={inputFavorites}
           style={styles.input}
+          placeholderTextColor='#1f1f1f'
           returnKeyType="search"
           onChangeText={(e) => setInputSearch(e)}
           onSubmitEditing={() => handleKeyPress(inputSearch)}
         />
-      </TouchableOpacity> */}
+      </TouchableOpacity>
       <View style={[styles.line, global.mainBgColor]} />
     </View>
   );

@@ -26,22 +26,22 @@ export const createBusiness = /* GraphQL */ `
         identityID
         favorites {
           nextToken
-          __typename
         }
         business {
           nextToken
-          __typename
         }
         owner
         createdAt
         updatedAt
-        __typename
       }
       identityID
       name
       image
+      images
+      thumbnail
       email
       phone
+      description
       whatsapp
       instagram
       facebook
@@ -49,7 +49,6 @@ export const createBusiness = /* GraphQL */ `
       coordinates {
         lat
         lon
-        __typename
       }
       activity
       tags
@@ -62,15 +61,12 @@ export const createBusiness = /* GraphQL */ `
           owner
           createdAt
           updatedAt
-          __typename
         }
         nextToken
-        __typename
       }
       createdAt
       updatedAt
       owner
-      __typename
     }
   }
 `;
@@ -81,7 +77,28 @@ export const updateBusiness = /* GraphQL */ `
   ) {
     updateBusiness(input: $input, condition: $condition) {
       id
-      image
+      images
+      thumbnail
+    }
+  }
+`;
+
+export const updateBusinessPage = /* GraphQL */ `
+  mutation UpdateBusiness(
+    $input: UpdateBusinessInput!
+    $condition: ModelBusinessConditionInput
+  ) {
+    updateBusiness(input: $input, condition: $condition) {
+      id
+      name
+      email
+      phone
+      whatsapp
+      instagram
+      facebook
+      page
+      activity
+      description
     }
   }
 `;

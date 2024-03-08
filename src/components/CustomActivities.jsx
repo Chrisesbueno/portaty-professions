@@ -21,8 +21,7 @@ const CustomActivities = ({ data }) => {
   const [modalVisible, setModalVisible] = useState(false);
   const { control } = useForm();
   const activity = useRecoilValue(activitySelect);
-  useEffect(() => {
-  }, []);
+  useEffect(() => {}, []);
 
   return (
     <ScrollView
@@ -30,16 +29,16 @@ const CustomActivities = ({ data }) => {
       showsVerticalScrollIndicator={false}
     >
       <View>
-        <Text style={styles.labelInputTag}>Actividad Laboral</Text>
+        <Text style={styles.labelInputTag}>Actividad (*)</Text>
         <TouchableOpacity
           style={[styles.inputContainerTag]}
           onPress={() => setModalVisible(!modalVisible)}
         >
           <View style={{ flex: 1, flexDirection: "row" }}>
             {activity.name ? (
-                <View style={styles.containerTag}>
-                  <Text style={styles.textTag}>{activity.name}</Text>
-                </View>
+              <View style={styles.containerTag}>
+                <Text style={styles.textTag}>{activity.name}</Text>
+              </View>
             ) : (
               <Text style={styles.textInputTag}>
                 Selecciona tu actividad laboral
@@ -65,18 +64,19 @@ const CustomActivities = ({ data }) => {
                   >
                     <Image
                       style={{
-                        width: 25,
-                        height: 25,
+                        width: 35,
+                        height: 35,
                         resizeMode: "contain",
                       }}
                       source={require("@/utils/images/arrow_back.png")}
                     />
                   </Pressable>
-                </View>
-                <View style={{ flex: 1 }}>
                   <Text style={styles.titleTag}>
                     Elige una actividad laboral
                   </Text>
+                </View>
+                <View style={{ flex: 1 }}>
+                  
 
                   <View style={[{ flex: 1 }]}>
                     <FlatList
@@ -88,6 +88,12 @@ const CustomActivities = ({ data }) => {
                       columnWrapperStyle={{ justifyContent: "space-between" }}
                     />
                   </View>
+                    <TouchableOpacity
+                      onPress={() => setModalVisible(!modalVisible)}
+                      style={[{alignItems: 'center', justifyContent: 'center', padding: 15, borderRadius: 8, borderColor: '#1f1f1f', borderWidth: 1}, global.bgYellow]}
+                    >
+                      <Text style={{fontFamily: 'bold', color: '#1f1f1f', textAlign: 'center'}}>Aceptar</Text>
+                    </TouchableOpacity>
                 </View>
               </View>
             </View>

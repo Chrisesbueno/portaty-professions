@@ -37,6 +37,7 @@ export const searchBusinesses = /* GraphQL */ `
         name
         image
         email
+        description
         phone
         whatsapp
         instagram
@@ -73,30 +74,34 @@ export const getBusiness = /* GraphQL */ `
     getBusiness(id: $id) {
       id
       userID
+      identityID
       name
       image
+      images
+      thumbnail
       email
       phone
       whatsapp
       instagram
+      description
       facebook
       page
-      identityID
       coordinates {
         lat
         lon
-        __typename
       }
       activity
       tags
       favorites {
         items {
           id
+          businessID
+          position
         }
+        nextToken
       }
       createdAt
       updatedAt
-      __typename
     }
   }
 `;

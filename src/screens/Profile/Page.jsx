@@ -2,47 +2,176 @@ import {
   View,
   Text,
   Image,
-  TextInput,
   ScrollView,
   TouchableOpacity,
   Share,
-  ActivityIndicator,
   Platform,
   Linking,
-  Alert,
+  FlatList,
+  Modal,
+  Pressable,
+  TouchableWithoutFeedback,
+  ActivityIndicator,
+  RefreshControl,
+  Switch,
 } from "react-native";
-import React, { useLayoutEffect, useState } from "react";
-import CustomSelect from "@/components/CustomSelect";
+import React, { useState, useEffect, useRef } from "react";
 import styles from "@/utils/styles/Unprofile.module.css";
 import {
-  FontAwesome5,
   MaterialCommunityIcons,
   AntDesign,
-  FontAwesome,
-  Foundation,
   EvilIcons,
-  Feather,
+  Entypo,
+  Ionicons
 } from "@expo/vector-icons";
 import { Auth, API, Storage } from "aws-amplify";
-import * as queries from "@/graphql/CustomQueries/Favorites";
-import * as customFavorites from "@/graphql/CustomMutations/Favorites";
+import * as subscriptions from "@/graphql/CustomSubscriptions/Profile";
+import * as mutations from "@/graphql/CustomMutations/Profile";
+import * as queries from "@/graphql/CustomQueries/Profile";
 import MapView, { Marker } from "react-native-maps";
 import SkeletonPage from "@/components/SkeletonPage";
 import * as ImagePicker from "expo-image-picker";
 import ModalAlert from "@/components/ModalAlert";
-import Swiper from "react-native-swiper";
+import { updateProfile } from "@/atoms";
+import { useRecoilState } from "recoil";
+import * as customProfile from "@/graphql/CustomQueries/Profile";
+import { useCallback } from "react";
+import { TextInput } from "react-native";
+// pdf
+import { StorageAccessFramework } from "expo-file-system";
+import * as FileSystem from "expo-file-system";
+import * as IntentLauncher from "expo-intent-launcher";
+import * as Sharing from "expo-sharing";
+// hooks
+import useOpenFile from "@/hooks/useOpenFile";
+import CustomButton from "@/components/CustomButton";
 
 const Page = ({ route, navigation }) => {
-  /*  */
-  const [selectedImages, setSelectedImages] = useState([]);
-  const [storageImages, setStorageImages] = useState([]);
-  const [storagePaths, setStoragePaths] = useState([]);
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [visible, setVisible] = useState(false);
-  const global = require("@/utils/styles/global.js");
+  const mapRef = useRef(null);
   const {
     data: { item, image },
   } = route.params;
+  const { downloadAndOpenFile } = useOpenFile();
+  const [selectedImages, setSelectedImages] = useState([]);
+  const [open, setOpen] = useState(false);
+  const [dimensionsImages, setDimensionsImages] = useState(0);
+  const [imageView, setImageView] = useState(null);
+  const [imageChange, setImageChange] = useState(null);
+  const [storageImages, setStorageImages] = useState([]);
+  const [arrayImages, setArrayImages] = useState(item?.images);
+  const [visible, setVisible] = useState(false);
+  const [descriptionImage, setDescriptionImage] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [loadingExtras, setLoadingExtras] = useState(5);
+  const global = require("@/utils/styles/global.js");
+  const [statusProfile, setStatusProfile] = useRecoilState(updateProfile);
+  const [activeMainImage, setActiveMainImage] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+  const [editActive, setEditActive] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  // coordinates
+  const [coordinate, setCoordinate] = useState({
+    latitude: item.coordinates.lat,
+    longitude: item.coordinates.lon,
+  });
+
+  const [editParams, setEditParams] = useState({
+    name: item.name,
+    activity: item.activity,
+    phone: item.phone,
+    ws: item.whatsapp,
+    email: item.email,
+    web: item.page,
+    instagram: item.instagram,
+    facebook: item.facebook,
+    description: item.description,
+  });
+  console.log("esto", storageImages);
+  const onSaveChange = async () => {
+    setIsLoading(true);
+    try {
+      const result = await API.graphql({
+        query: mutations.updateBusinessPage,
+        authMode: "AMAZON_COGNITO_USER_POOLS",
+        variables: {
+          input: {
+            id: item.id,
+            name: editParams?.name,
+            email: editParams?.email,
+            phone: editParams?.phone,
+            whatsapp: editParams?.ws,
+            instagram: editParams?.instagram,
+            facebook: editParams?.facebook,
+            page: editParams?.web,
+            activity: editParams?.activity,
+            description: editParams?.description,
+          },
+        },
+      });
+      console.log(result);
+    } catch (error) {
+      const { message } = new Error(error);
+      console.log("ERROR AL ACTUALIZAR NEGOCIO: ", message);
+    }
+    setIsLoading(false);
+    setEditActive(!editActive);
+  };
+
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    setTimeout(() => {
+      setRefreshing(false);
+    }, 1000);
+  }, []);
+
+  const getPdf = async () => {
+    const { identityId } = await Auth.currentUserCredentials();
+    const api = "api-professions-gateway";
+    const path = "/documentqr";
+    const params = {
+      headers: {},
+      queryStringParameters: {
+        path: `https://www.portaty.com/share/business?id=${item.id}`,
+        businessid: item.id,
+        identityid: identityId,
+      },
+    };
+    let fileUri = "";
+    try {
+      // creo el pdf url
+      const result = await API.get(api, path, params);
+      // la ruta de guardado
+      await Linking.openURL(result?.url);
+      return;
+      const localUri = `${FileSystem.documentDirectory}qr.pdf`;
+      console.log(localUri);
+
+      console.log(result);
+      const file = await FileSystem.downloadAsync(result?.url, localUri);
+      console.log(file);
+      console.log("llegue aqui primero");
+
+      FileSystem.getContentUriAsync(file.uri).then((cUri) => {
+        if (Platform.OS === "ios") {
+          Sharing.shareAsync(cUri);
+        } else {
+          console.log(cUri);
+          IntentLauncher.startActivityAsync("android.intent.action.VIEW", {
+            data: cUri,
+            flags: 1,
+            type: "application/pdf",
+          }).catch((e) => console.log("ERROR AL ABRIR ARCHIVO: ", e));
+        }
+      });
+      // descargo en almacenamiento local y luego abro
+      // downloadAndOpenFile(result.url, localUri, "application/pdf");
+      console.log("llegue aqui");
+    } catch (error) {
+      console.log("Error en pdf: ", error.message);
+    }
+    return fileUri;
+  };
+
   const onOpenMap = (lat, lng, name) => {
     let url = "";
     if (Platform.OS === "android") {
@@ -63,22 +192,38 @@ const Page = ({ route, navigation }) => {
     }
   };
 
+  const getFileData = async (contentUri) => {
+    const fileData = await FileSystem.readAsStringAsync(contentUri);
+    return fileData;
+  };
+
+  const onSharePdf = async (contentUri) => {
+    const canOpen = await Linking.canOpenURL(contentUri);
+
+    if (!canOpen) {
+      alert(`No se encontró ninguna aplicación para abrir el PDF`);
+      return;
+    }
+
+    await Linking.openURL(contentUri);
+  };
+
   const selectImages = async () => {
     let result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsMultipleSelection: true,
-      quality: 1,
+      // allowsMultipleSelection: true,
+      aspect: [6, 4],
+      allowsEditing: true,
+      quality: 0.1,
+      base64: true,
     });
 
-    console.log(result);
-
     if (!result.canceled) {
-      if (result.assets.length > 4) {
-        setVisible(true);
-      } else {
-        setSelectedImages(result.assets.map((i) => i.uri));
-        uploadImages(result.assets);
-      }
+      setImageView(result.assets[0]);
+      setOpen(!open);
+      // uploadImages(result.assets[0].base64);
+    } else {
+      console.log("cancelaste");
     }
   };
   function urlToBlob(url) {
@@ -95,54 +240,212 @@ const Page = ({ route, navigation }) => {
       xhr.send();
     });
   }
-  const uploadImages = async (images) => {
-    for (let image of images) {
-      const blob = await urlToBlob(image.uri);
-      try {
-        const { key } = await Storage.put(
-          `business/${item.id}/extras/image_${image.assetId}.jpg`,
-          blob,
-          {
-            level: "protected",
-            contentType: "image/jpeg",
-          }
-        );
-        console.log(key);
-      } catch (error) {
-        console.log("aqui", error);
-      }
+
+  const Randomizer = () => {
+    let numero = "";
+    for (let i = 0; i < 10; i++) {
+      numero += Math.floor(Math.random() * 10);
     }
+    return numero;
+  };
+
+  const onViewRef = useRef((viewableItems) => {
+    if (viewableItems.changed[0].isViewable)
+      setDimensionsImages(viewableItems.changed[0].item.key);
+  });
+  const viewConfigRef = useRef({ viewAreaCoveragePercentThreshold: 20 });
+
+  const uploadImages = async (imageB64, description) => {
+    setOpen(!open);
+    setLoading(true);
+    const { identityId } = await Auth.currentUserCredentials();
+    const apiName = "api-professions-gateway"; // replace this with your api name.
+    const path = "/thumbnailgenerator"; //replace this with the path you have configured on your API
+    const myInit = {
+      body: {
+        identityid: identityId,
+        businessid: item.id,
+        action: "create",
+        type: "extras",
+        key: storageImages.length,
+        description: description,
+        image: imageB64,
+      }, // replace this with attributes you need
+      headers: {}, // OPTIONAL
+    };
+
+    const result = await API.post(apiName, path, myInit);
+    imagesArray();
+    setDescriptionImage("");
+
+    setLoading(false);
   };
 
   const AllImages = async () => {
-    // setStorageImages([image])
-    const { identityId } = await Auth.currentUserCredentials();
     try {
-      const result = await Storage.list(`business/${item.id}/extras/`, {
-        level: "protected",
-        identityId: identityId,
-        pageSize: 10,
-      });
-      setStoragePaths(result.results)
-      const urls = await Promise.all(
-        result.results.map((item) => 
-          Storage.get(item.key, { level: "protected" })
-            .then((url) => url)
-            .catch((err) => console.log(err))
-        )
-      );
-      setStorageImages([image, ...urls])
+      const list = arrayImages
+        ?.map((image) => JSON.parse(image))
+        .sort((a, b) => a.key - b.key);
+      setStorageImages(list);
+      console.log("aqui", list);
     } catch (error) {
       console.log(error);
     }
   };
 
-  useLayoutEffect(() => {
-    AllImages()
-    console.log(storageImages)
+  const changeTemporalImage = async () => {
+    let result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [6, 4],
+      quality: 0.1,
+      base64: true,
+    });
+    if (!result.canceled) {
+      setActiveMainImage(true);
+      setImageChange(result.assets[0]);
+      console.log(result.assets[0]);
+    } else {
+      console.log("cancelaste");
+    }
+  };
+  const changeImage = async (image, description, change) => {
+    const { identityId } = await Auth.currentUserCredentials();
+    const apiName = "api-professions-gateway";
+    const path = "/thumbnailgenerator";
+    setOpen(!open);
+    setLoadingExtras(image.key);
+    const myInit = {
+      body: {
+        identityid: identityId,
+        businessid: item.id,
+        action: "update",
+        type: image.key === 0 ? "profile" : "extras",
+        key: image?.key,
+        description: description ? description : "",
+        image: change ? change.base64 : "",
+      }, // replace this with attributes you need
+      headers: {}, // OPTIONAL
+    };
+
+    try {
+      const resultAPI = await API.post(apiName, path, myInit);
+      // console.log(resultAPI);
+      setDescriptionImage("");
+      imagesArray();
+      setOpen(!open);
+      setLoadingExtras(5);
+      setImageChange(null);
+      setActiveMainImage(false);
+    } catch (error) {
+      console.log("ERROR EN API: ", error.message);
+    }
+  };
+
+  const deleteImage = async (image) => {
+    let imagePath = image.url.substring(image.url.indexOf("protected"));
+    const { identityId } = await Auth.currentUserCredentials();
+    const apiName = "api-professions-gateway"; // replace this with your api name.
+    const path = "/thumbnailgenerator"; //replace this with the path you have configured on your API
+
+    const myInit = {
+      body: {
+        action: "delete",
+        path: imagePath,
+        businessid: item.id,
+        key: image.key,
+      }, // replace this with attributes you need
+      headers: {}, // OPTIONAL
+    };
+    try {
+      const resultAPI = await API.post(apiName, path, myInit);
+      // console.log(resultAPI);
+      imagesArray();
+      setDescriptionImage("");
+      setOpen(!open);
+      setImageView(null);
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  const imagesArray = async () => {
+    const result = await API.graphql({
+      query: customProfile.getImages,
+      authMode: "AMAZON_COGNITO_USER_POOLS",
+      variables: {
+        id: item?.id,
+      },
+    });
+    const list = result?.data?.getBusiness?.images
+      .map((image) => JSON.parse(image))
+      .sort((a, b) => a.key - b.key);
+    // console.log(list);
+    setStorageImages(list);
+  };
+
+  useEffect(() => {
+    AllImages();
+    imagesArray();
+
+    const updateSub = API.graphql({
+      query: subscriptions.onUpdateBusiness,
+      authMode: "AMAZON_COGNITO_USER_POOLS",
+      variables: {
+        filter: {
+          id: { eq: item.id },
+        },
+      },
+    }).subscribe({
+      next: ({ provider, value: { data } }) => {
+        console.log(item.id);
+        console.log("EL SUBS", data);
+
+        if (data?.onUpdateBusiness?.images) {
+          const list = data?.onUpdateBusiness?.images
+            .map((image) => JSON.parse(image))
+            .sort((a, b) => a.key - b.key);
+          setStorageImages(list);
+          setArrayImages(data.onUpdateBusiness.images);
+        } else {
+          API.graphql({
+            authMode: "AMAZON_COGNITO_USER_POOLS",
+            query: queries.getBusinessCoordinate,
+            variables: {
+              id: item.id,
+            },
+          }).then((r) => {
+            const coor = r.data.getBusiness.coordinates;
+            setCoordinate({
+              latitude: coor.lat,
+              longitude: coor.lon,
+            });
+            mapRef.current.animateToRegion(
+              {
+                ...{ latitude: coor.lat, longitude: coor.lon },
+                latitudeDelta: 0.01, // Ajusta según tus necesidades
+                longitudeDelta: 0.01, // Ajusta según tus necesidades
+              },
+              500
+            );
+          });
+        }
+      },
+      error: (error) => console.warn(error),
+    });
+    return () => {
+      updateSub.unsubscribe();
+    };
   }, []);
 
-  if (!item || storageImages.length === 0) return <SkeletonPage />;
+  const onChangeLocation = (lat, lon) => {
+    navigation.navigate("MapView", {
+      businessid: item.id,
+      coordinates: { latitude: lat, longitude: lon },
+    });
+  };
+
+  if (!item || storageImages?.length === 0) return <SkeletonPage />;
   return (
     <View
       style={[
@@ -151,70 +454,83 @@ const Page = ({ route, navigation }) => {
         },
         global.bgWhite,
       ]}
+      refreshControl={
+        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+      }
     >
       <ScrollView style={{ flex: 1, marginTop: 30 }}>
         <View
           style={[
             {
               flex: 1,
-              paddingHorizontal: 20,
               alignItems: "center",
               justifyContent: "center",
+              alignSelf: "center",
+              width: 320,
+              height: 250,
+              position: "relative",
             },
           ]}
         >
+          {storageImages.length !== 1 &&
+            dimensionsImages + 1 > 1 &&
+            dimensionsImages <= 3 && (
+              <View
+                style={[
+                  global.mainBgColor,
+                  {
+                    width: 30,
+                    height: 30,
+                    position: "absolute",
+                    zIndex: 10,
+                    left: 0,
+                    top: "50%",
+                    opacity: 0.85,
+                    borderRadius: 5,
+                    justifyContent: "center",
+                    alignItems: "center",
+                  },
+                ]}
+              >
+                <Entypo name="triangle-left" size={24} color="#1f1f1f" />
+              </View>
+            )}
+          {storageImages.length !== 1 &&
+            dimensionsImages >= 0 &&
+            dimensionsImages < storageImages.length - 1 && (
+              <View
+                style={[
+                  global.mainBgColor,
+                  {
+                    width: 30,
+                    height: 30,
+                    position: "absolute",
+                    zIndex: 10,
+                    top: "50%",
+                    right: 0,
+                    opacity: 0.85,
+                    borderRadius: 5,
+                    justifyContent: "center",
+                    alignItems: "center",
+                  },
+                ]}
+              >
+                <Entypo name="triangle-right" size={24} color="#1f1f1f" />
+              </View>
+            )}
           {storageImages.length !== 0 && (
-            <Swiper
-              style={{
-                // width: 340,
-                height: 260,
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-              showsButtons={true}
-              loop={false}
-              onIndexChanged={(index) => setCurrentIndex(index)}
-              onMomentumScrollEnd={(e, state) => setCurrentIndex(state.index)}
-              nextButton={
-                <Text
-                  style={{
-                    color:
-                      currentIndex < storageImages.length - 1
-                        ? "#fb8500"
-                        : "transparent",
-                    fontSize: 50,
-                  }}
-                >
-                  ›
-                </Text>
-              }
-              prevButton={
-                <Text
-                  style={{
-                    color: currentIndex > 0 ? "#fb8500" : "transparent",
-                    fontSize: 50,
-                  }}
-                >
-                  ‹
-                </Text>
-              }
-              activeDotColor="#000"
-            >
-              {storageImages.map((item, index) => (
+            <FlatList
+              horizontal
+              data={storageImages}
+              renderItem={({ item, index }) => (
                 <View
                   style={{
-                    width: 310,
-                    height: 230,
-                    borderRadius: 5,
-                    borderColor: "#efeded",
-                    borderWidth: 1,
-                    overflow: "hidden",
-                    padding: 10,
-                    marginBottom: 20,
-                    marginTop: 20,
-                    position: "relative",
+                    flex: 1,
+                    width: 320,
+                    height: 250,
+                    // position: "relative",
+                    // zIndex: 3
                   }}
-                  key={index}
                 >
                   <Image
                     style={{
@@ -223,43 +539,117 @@ const Page = ({ route, navigation }) => {
                       resizeMode: "cover",
                       borderRadius: 5,
                       backgroundColor: "#fff",
+                      borderColor: "#1f1f1f",
+                      borderWidth: 0.7,
                     }}
-                    source={{ uri: item }}
+                    source={{ uri: item.url }}
                   />
+
+                  {item.key === loadingExtras && (
+                    <View
+                      style={{
+                        flex: 1,
+                        justifyContent: "center",
+                        alignItems: "center",
+                        backgroundColor: "#000",
+                        opacity: 0.5,
+                        position: "absolute",
+                        width: "100%",
+                        height: "100%",
+                      }}
+                    >
+                      <ActivityIndicator color={`#1f1f1f`} size={`large`} />
+                    </View>
+                  )}
                   <TouchableOpacity
                     style={[
                       {
-                        position: "absolute",
+                        flexDirection: "row",
                         padding: 8,
                         borderRadius: 5,
-                        opacity: 0.95,
-                        flexDirection: "row",
-                        justifyContent: "space-between",
-                        columnGap: 5,
+                        opacity: 0.7,
                         alignItems: "center",
-                        bottom: 0,
+                        marginBottom: 5,
+                        position: "absolute",
                         right: 0,
+                        borderColor: "#1f1f1f",
+                        borderWidth: 0.7,
                       },
-                      global.mainBgColor,
+                      global.bgYellow,
                     ]}
-                    onPress={selectImages}
-                    activeOpacity={1}
+                    onPress={() => {
+                      setOpen(!open);
+                      setImageView(item);
+                      console.log("imagen", item);
+                    }}
                   >
-                    <MaterialCommunityIcons
-                      name="camera-plus-outline"
-                      size={23}
-                      color="white"
-                    />
-                    <Text style={[{ fontFamily: "medium" }, global.white]}>
-                      agregar mas fotos
+                    <Text
+                      style={[
+                        { fontFamily: "medium", fontSize: 17 },
+                        global.black,
+                      ]}
+                    >
+                      {item.key + 1}/{storageImages.length}
                     </Text>
+                    <MaterialCommunityIcons
+                      name="image-search-outline"
+                      size={20}
+                      color="#1f1f1f"
+                      style={{ marginLeft: 5 }}
+                    />
                   </TouchableOpacity>
                 </View>
-              ))}
-            </Swiper>
-          ) 
-          }
+              )}
+              keyExtractor={(item, index) => index}
+              viewabilityConfig={viewConfigRef.current}
+              onViewableItemsChanged={onViewRef.current}
+            />
+          )}
         </View>
+        {storageImages.length < 5 && (
+          <View
+            style={{
+              flex: 1,
+              justifyContent: "center",
+              alignItems: "center",
+              marginTop: 10,
+            }}
+          >
+            <TouchableOpacity
+              style={[
+                {
+                  height: 50,
+                  width: 250,
+                  justifyContent: "center",
+                  alignItems: "center",
+                  flexDirection: "row",
+                  borderRadius: 8,
+                  opacity: 0.95,
+                  borderWidth: 0.7,
+                  borderColor: "#1f1f1f",
+                  marginBottom: 5,
+                },
+                global.bgYellow,
+              ]}
+              onPress={selectImages}
+            >
+              <Text
+                style={[{ fontFamily: "bold", fontSize: 13 }, global.black]}
+              >
+                Agregar mas fotos
+              </Text>
+              <MaterialCommunityIcons
+                name="camera-plus-outline"
+                size={24}
+                color="#1f1f1f"
+                style={{ marginLeft: 8 }}
+              />
+            </TouchableOpacity>
+            <Text style={{ fontFamily: "regular" }}>
+              Solo puedes tener 5 fotos como maximo
+            </Text>
+          </View>
+        )}
         <View
           style={{
             padding: 20,
@@ -267,58 +657,95 @@ const Page = ({ route, navigation }) => {
             justifyContent: "center",
           }}
         >
-          <Text style={{ fontSize: 26, fontFamily: "thin" }}>
-            {item.favorites?.items.length}
+          <Text style={{ fontSize: 24, fontFamily: "medium" }}>
+            {item.favorites?.items?.length}
           </Text>
-          <Text style={{ fontSize: 22, fontFamily: "thin" }}>Favoritos</Text>
+          <Text style={{ fontSize: 20, fontFamily: "light" }}>Favoritos</Text>
         </View>
-        <View style={[styles.line, global.bgWhiteSmoke]} />
-        <TouchableOpacity
-          style={{
-            padding: 20,
-            flexDirection: "row",
-            justifyContent: "space-between",
-            alignItems: "center",
-          }}
-          activeOpacity={1}
-          onPress={() =>
-            onOpenMap(item.coordinates.lat, item.coordinates.lon, item.name)
-          }
-        >
-          <View
+        <View>
+          <View style={[styles.line, global.bgMidGray]} />
+          <TouchableOpacity
             style={{
-              flex: 1,
-              borderRadius: 10,
-              overflow: "hidden",
-              marginBottom: 40,
+              padding: 20,
+              flexDirection: "row",
+              justifyContent: "space-between",
+              alignItems: "center",
             }}
+            activeOpacity={1}
+            onPress={() =>
+              onOpenMap(coordinate.latitude, coordinate.longitude, item.name)
+            }
           >
-            <MapView
+            <View
               style={{
-                width: "100%",
-                height: 220,
+                flex: 1,
+                borderRadius: 10,
+                overflow: "hidden",
+                marginTop: 5,
+                borderColor: "#1f1f1f",
+                borderWidth: 0.7,
               }}
-              initialRegion={{
-                latitude: item.coordinates.lat,
-                longitude: item.coordinates.lon,
-                latitudeDelta: 0.001,
-                longitudeDelta: 0.001,
-              }}
-              scrollEnabled={false}
             >
-              <Marker
-                coordinate={{
-                  latitude: item.coordinates.lat,
-                  longitude: item.coordinates.lon,
+              <MapView
+                ref={mapRef}
+                style={{
+                  width: "100%",
+                  height: 220,
                 }}
-                title={item.name}
-              />
-            </MapView>
-          </View>
-        </TouchableOpacity>
+                initialRegion={{
+                  latitude: coordinate.latitude,
+                  longitude: coordinate.longitude,
+                  latitudeDelta: 0.001,
+                  longitudeDelta: 0.001,
+                }}
+                scrollEnabled={false}
+              >
+                <Marker
+                  coordinate={{
+                    latitude: coordinate.latitude,
+                    longitude: coordinate.longitude,
+                  }}
+                  title={item.name}
+                />
+              </MapView>
+            </View>
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() =>
+              onChangeLocation(coordinate.latitude, coordinate.longitude)
+            }
+            style={[
+              global.bgYellow,
+              {
+                width: 90,
+                height: 50,
+                justifyContent: "center",
+                alignItems: "center",
+                borderColor: "#1f1f1f",
+                borderWidth: 0.7,
+                borderRadius: 6,
+                position: 'absolute',
+                bottom: '7.5%',
+                right: '5.5%'
+              },
+            ]}
+          >
+            <Text
+              style={{
+                fontSize: 12,
+                fontFamily: "bold",
+                textAlign: "center",
+              }}
+            >
+              Editar ubicacion
+            </Text>
+          </TouchableOpacity>
+        </View>
+
         <TouchableOpacity
           style={{
             padding: 20,
+            marginTop: -15,
             flexDirection: "row",
             justifyContent: "space-between",
             alignItems: "center",
@@ -334,17 +761,19 @@ const Page = ({ route, navigation }) => {
                   borderRadius: 10,
                   alignItems: "center",
                   justifyContent: "center",
+                  borderColor: "#1f1f1f",
+                  borderWidth: 0.7,
                 },
-                global.mainBgColor,
+                global.bgYellow,
               ]}
             >
-              <EvilIcons name="share-google" size={25} color="white" />
+              <EvilIcons name="share-google" size={32} color="#1f1f1f" />
             </View>
             <View style={{ marginLeft: 10 }}>
-              <Text style={{ fontFamily: "light", fontSize: 16 }}>
+              <Text style={{ fontFamily: "medium", fontSize: 15 }}>
                 Compartir
               </Text>
-              <Text style={{ fontFamily: "thin", fontSize: 12, width: 150 }}>
+              <Text style={{ fontFamily: "regular", fontSize: 12, width: 150 }}>
                 Compartelo con tus amigos y familiares
               </Text>
             </View>
@@ -366,12 +795,15 @@ const Page = ({ route, navigation }) => {
             alignItems: "center",
             marginTop: -25,
           }}
-          onPress={() => {
-            navigation.navigate("ViewQR", {
-              id: `https://www.portaty.com/share/business?id=${item.id}`,
-              name: item.name,
-            });
-          }}
+          onPress={() =>
+            getPdf().then(async (fileUri) => {
+              if (fileUri) {
+                const localFileUri = await getFileData(fileUri);
+                onSharePdf(localFileUri);
+                // console.log(localFileUri);
+              }
+            })
+          }
         >
           <View style={{ flexDirection: "row", alignItems: "center" }}>
             <View
@@ -382,20 +814,65 @@ const Page = ({ route, navigation }) => {
                   borderRadius: 10,
                   alignItems: "center",
                   justifyContent: "center",
+                  borderColor: "#1f1f1f",
+                  borderWidth: 0.7,
                 },
-                global.mainBgColor,
+                global.bgYellow,
               ]}
             >
-              <MaterialCommunityIcons
-                name="qrcode-scan"
-                size={25}
-                color="white"
-              />
+              <AntDesign name="qrcode" size={24} color="#1f1f1f" />
             </View>
             <View style={{ marginLeft: 10 }}>
-              <Text style={{ fontFamily: "light", fontSize: 16 }}>Ver QR</Text>
-              <Text style={{ fontFamily: "thin", fontSize: 12, width: 150 }}>
-                Compartelo en formato QR para pegarlo en donde quieras
+              <Text style={{ fontFamily: "medium", fontSize: 15 }}>
+                Descargar QR
+              </Text>
+              <Text style={{ fontFamily: "regular", fontSize: 12, width: 150 }}>
+                Pegalo en donde tu quieras
+              </Text>
+            </View>
+          </View>
+          <Image
+            style={{
+              width: 40,
+              height: 40,
+              resizeMode: "cover",
+            }}
+            source={require("@/utils/images/arrow_right.png")}
+          />
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={{
+            padding: 20,
+            marginTop: -25,
+            flexDirection: "row",
+            justifyContent: "space-between",
+            alignItems: "center",
+          }}
+          onPress={() => navigation.navigate('Analytics')}
+        >
+          <View style={{ flexDirection: "row", alignItems: "center" }}>
+            <View
+              style={[
+                {
+                  width: 58,
+                  height: 58,
+                  borderRadius: 10,
+                  alignItems: "center",
+                  justifyContent: "center",
+                  borderColor: "#1f1f1f",
+                  borderWidth: 0.7,
+                },
+                global.bgYellow,
+              ]}
+            >
+              <AntDesign name="barschart" size={24} color="#1f1f1f" />
+            </View>
+            <View style={{ marginLeft: 10 }}>
+              <Text style={{ fontFamily: "medium", fontSize: 15 }}>
+                Estadisticas
+              </Text>
+              <Text style={{ fontFamily: "regular", fontSize: 12, width: 150 }}>
+                Mira las estadisticas de tu negocio
               </Text>
             </View>
           </View>
@@ -409,10 +886,48 @@ const Page = ({ route, navigation }) => {
           />
         </TouchableOpacity>
         <View style={{ marginBottom: 80 }}>
-          <Text style={{ fontSize: 22, fontFamily: "thinItalic", padding: 10 }}>
-            Datos
-          </Text>
-          <View style={[styles.line, global.bgWhiteSmoke]} />
+          <View
+            style={{
+              flexDirection: "row",
+              justifyContent: "space-between",
+              padding: 10,
+            }}
+          >
+            <Text
+              style={{
+                fontSize: 22,
+                fontFamily: "regular",
+                alignSelf: "flex-end",
+              }}
+            >
+              Datos
+            </Text>
+            <View
+              style={[
+                global.bgYellow,
+                {
+                  borderRadius: 8,
+                  borderWidth: 0.7,
+                  flexDirection: "row",
+                  alignItems: "center",
+                  paddingHorizontal: 12,
+                },
+              ]}
+            >
+              <Text style={{ fontSize: 14, fontFamily: "bold" }}>Editar</Text>
+              <Switch
+                trackColor={{
+                  false: "#767577",
+                  true: "#1f1f1f",
+                }}
+                thumbColor={editActive ? "#FFFFFF" : "#f4f3f4"}
+                onValueChange={() => setEditActive(!editActive)}
+                value={editActive}
+              />
+            </View>
+          </View>
+
+          <View style={[styles.line, global.bgMidGray]} />
           <View
             style={{
               flexDirection: "row",
@@ -425,20 +940,37 @@ const Page = ({ route, navigation }) => {
               {/* <Foundation name="torso-business" size={22} color="#1f1f1f" /> */}
               <Text
                 style={[
-                  { fontFamily: "thinItalic", fontSize: 15 },
-                  global.midGray,
+                  { fontFamily: "lightItalic", fontSize: 15 },
+                  global.black,
                 ]}
               >
                 Razon social
               </Text>
             </View>
             <View style={{ flexDirection: "row", alignItems: "center" }}>
-              <Text style={[{ fontSize: 13, fontFamily: "lightItalic" }]}>
+              <TextInput
+                onChangeText={(e) => setEditParams({ ...state, name: e })}
+                value={editParams?.name}
+                style={[
+                  {
+                    fontSize: 13,
+                    fontFamily: "regular",
+                    padding: 10,
+                    borderColor: "#1f1f1f",
+                    borderWidth: 0.7,
+                    borderRadius: 4,
+                  },
+                  editActive ? global.bgWhite : global.bgWhiteSoft,
+                ]}
+                // defaultValue={item.name}
+                editable={editActive ? true : false}
+              />
+              {/* <Text style={[{ fontSize: 13, fontFamily: "regular" }]}>
                 {item.name}
-              </Text>
+              </Text> */}
             </View>
           </View>
-          <View style={[styles.line, global.bgWhiteSmoke]} />
+          <View style={[styles.line, global.bgMidGray]} />
           <View
             style={{
               flexDirection: "row",
@@ -451,20 +983,86 @@ const Page = ({ route, navigation }) => {
               {/* <FontAwesome5 name="store" size={16} color="#1f1f1f" /> */}
               <Text
                 style={[
-                  { fontFamily: "thinItalic", fontSize: 15 },
-                  global.midGray,
+                  { fontFamily: "lightItalic", fontSize: 15 },
+                  global.black,
                 ]}
               >
                 Actividad laboral
               </Text>
             </View>
             <View style={{ flexDirection: "row", alignItems: "center" }}>
-              <Text style={[{ fontSize: 13, fontFamily: "lightItalic" }]}>
+              <TextInput
+                onChangeText={(e) => setEditParams({ ...state, activity: e })}
+                value={editParams?.activity}
+                style={[
+                  {
+                    fontSize: 13,
+                    fontFamily: "regular",
+                    padding: 10,
+                    borderColor: "#1f1f1f",
+                    borderWidth: 0.7,
+                    borderRadius: 4,
+                    textTransform: "capitalize",
+                  },
+                  editActive ? global.bgWhite : global.bgWhiteSoft,
+                ]}
+                // defaultValue={item.name}
+                editable={editActive ? true : false}
+              />
+              {/* <Text style={[{ fontSize: 13, fontFamily: "regular" }]}>
                 {item.activity}
-              </Text>
+              </Text> */}
             </View>
           </View>
-          <View style={[styles.line, global.bgWhiteSmoke]} />
+          <View style={[styles.line, global.bgMidGray]} />
+          <View
+            style={{
+              flexDirection: "row",
+              justifyContent: "space-between",
+              alignItems: "center",
+              padding: 20,
+            }}
+          >
+            <View style={{ flexDirection: "row", alignItems: "center" }}>
+              {/* <FontAwesome5 name="store" size={16} color="#1f1f1f" /> */}
+              <Text
+                style={[
+                  { fontFamily: "lightItalic", fontSize: 15 },
+                  global.black,
+                ]}
+              >
+                Descripcion
+              </Text>
+            </View>
+            <View style={{ flexDirection: "row", alignItems: "center" }}>
+              <TextInput
+                onChangeText={(e) =>
+                  setEditParams({ ...state, description: e })
+                }
+                value={editParams?.description}
+                style={[
+                  {
+                    width: 200,
+                    height: 100,
+                    fontSize: 13,
+                    fontFamily: "regular",
+                    padding: 10,
+                    borderColor: "#1f1f1f",
+                    borderWidth: 0.7,
+                    borderRadius: 4,
+                  },
+                  editActive ? global.bgWhite : global.bgWhiteSoft,
+                ]}
+                // defaultValue={item.name}
+                multiline={true}
+                editable={editActive ? true : false}
+              />
+              {/* <Text style={[{ fontSize: 13, fontFamily: "regular" }]}>
+                {item.activity}
+              </Text> */}
+            </View>
+          </View>
+          <View style={[styles.line, global.bgMidGray]} />
           <View
             style={{
               flexDirection: "row",
@@ -477,20 +1075,42 @@ const Page = ({ route, navigation }) => {
               {/* <FontAwesome name="phone" size={20} color="#1f1f1f" /> */}
               <Text
                 style={[
-                  { fontFamily: "thinItalic", fontSize: 15 },
-                  global.midGray,
+                  { fontFamily: "lightItalic", fontSize: 15 },
+                  global.black,
                 ]}
               >
                 Telefono
               </Text>
             </View>
             <View style={{ flexDirection: "row", alignItems: "center" }}>
-              <Text style={[{ fontSize: 13, fontFamily: "lightItalic" }]}>
+              <TextInput
+                onChangeText={(e) => setEditParams({ ...state, phone: e })}
+                value={editParams?.phone}
+                style={[
+                  {
+                    fontSize: 13,
+                    fontFamily: "regular",
+                    padding: 10,
+                    borderColor: "#1f1f1f",
+                    borderWidth: 0.7,
+                    borderRadius: 4,
+                    textTransform: "capitalize",
+                  },
+                  editActive ? global.bgWhite : global.bgWhiteSoft,
+                ]}
+                defaultValue={
+                  editParams?.phone === null
+                    ? "Agregar telefono"
+                    : editParams?.phone
+                }
+                editable={editActive ? true : false}
+              />
+              {/* <Text style={[{ fontSize: 13, fontFamily: "regular" }]}>
                 {item.phone}
-              </Text>
+              </Text> */}
             </View>
           </View>
-          <View style={[styles.line, global.bgWhiteSmoke]} />
+          <View style={[styles.line, global.bgMidGray]} />
           <View
             style={{
               flexDirection: "row",
@@ -503,20 +1123,42 @@ const Page = ({ route, navigation }) => {
               {/* <FontAwesome name="whatsapp" size={22} color="#1f1f1f" /> */}
               <Text
                 style={[
-                  { fontFamily: "thinItalic", fontSize: 15 },
-                  global.midGray,
+                  { fontFamily: "lightItalic", fontSize: 15 },
+                  global.black,
                 ]}
               >
                 WhatsApp
               </Text>
             </View>
             <View style={{ flexDirection: "row", alignItems: "center" }}>
-              <Text style={[{ fontSize: 13, fontFamily: "lightItalic" }]}>
+              <TextInput
+                onChangeText={(e) => setEditParams({ ...state, ws: e })}
+                value={
+                  editParams?.ws === "" ? "Agregar WhatsApp" : editParams?.ws
+                }
+                style={[
+                  {
+                    fontSize: 13,
+                    fontFamily: "regular",
+                    padding: 10,
+                    borderColor: "#1f1f1f",
+                    borderWidth: 0.7,
+                    borderRadius: 4,
+                    textTransform: "capitalize",
+                  },
+                  editActive ? global.bgWhite : global.bgWhiteSoft,
+                ]}
+                defaultValue={
+                  editParams?.ws === "" ? "Agregar WhatsApp" : editParams?.ws
+                }
+                editable={editActive ? true : false}
+              />
+              {/* <Text style={[{ fontSize: 13, fontFamily: "regular" }]}>
                 {item.whatsapp}
-              </Text>
+              </Text> */}
             </View>
           </View>
-          <View style={[styles.line, global.bgWhiteSmoke]} />
+          <View style={[styles.line, global.bgMidGray]} />
           <View
             style={{
               flexDirection: "row",
@@ -533,20 +1175,37 @@ const Page = ({ route, navigation }) => {
               /> */}
               <Text
                 style={[
-                  { fontFamily: "thinItalic", fontSize: 15 },
-                  global.midGray,
+                  { fontFamily: "lightItalic", fontSize: 15 },
+                  global.black,
                 ]}
               >
                 Correo
               </Text>
             </View>
             <View style={{ flexDirection: "row", alignItems: "center" }}>
-              <Text style={[{ fontSize: 13, fontFamily: "lightItalic" }]}>
+              <TextInput
+                onChangeText={(e) => setEditParams({ ...state, email: e })}
+                value={editParams?.email}
+                style={[
+                  {
+                    fontSize: 13,
+                    fontFamily: "regular",
+                    padding: 10,
+                    borderColor: "#1f1f1f",
+                    borderWidth: 0.7,
+                    borderRadius: 4,
+                    textTransform: "capitalize",
+                  },
+                  editActive ? global.bgWhite : global.bgWhiteSoft,
+                ]}
+                editable={editActive ? true : false}
+              />
+              {/* <Text style={[{ fontSize: 13, fontFamily: "regular" }]}>
                 {item.email}
-              </Text>
+              </Text> */}
             </View>
           </View>
-          <View style={[styles.line, global.bgWhiteSmoke]} />
+          <View style={[styles.line, global.bgMidGray]} />
           <View
             style={{
               flexDirection: "row",
@@ -559,25 +1218,47 @@ const Page = ({ route, navigation }) => {
               {/* <MaterialCommunityIcons name="web" size={24} color="#1f1f1f" /> */}
               <Text
                 style={[
-                  { fontFamily: "thinItalic", fontSize: 15 },
-                  global.midGray,
+                  { fontFamily: "lightItalic", fontSize: 15 },
+                  global.black,
                 ]}
               >
                 Web
               </Text>
             </View>
             <View style={{ flexDirection: "row", alignItems: "center" }}>
-              <Text
+              {/* <Text
                 style={[
-                  { fontSize: 13, fontFamily: "lightItalic", marginRight: 5 },
+                  { fontSize: 13, fontFamily: "regular", marginRight: 5 },
                 ]}
               >
                 Link
-              </Text>
-              <AntDesign name="link" size={16} color="#1f1f1f" />
+              </Text> */}
+              <TextInput
+                onChangeText={(e) => setEditParams({ ...state, web: e })}
+                value={
+                  editParams?.web === null ? "Agregar Web" : editParams?.web
+                }
+                style={[
+                  {
+                    fontSize: 13,
+                    fontFamily: "regular",
+                    padding: 10,
+                    borderColor: "#1f1f1f",
+                    borderWidth: 0.7,
+                    borderRadius: 4,
+                    textTransform: "capitalize",
+                  },
+                  editActive ? global.bgWhite : global.bgWhiteSoft,
+                ]}
+                editable={editActive ? true : false}
+                defaultValue={
+                  editParams?.web === null ? "Agregar Web" : editParams?.web
+                }
+              />
+              {/* <AntDesign name="link" size={16} color="#1f1f1f" /> */}
             </View>
           </View>
-          <View style={[styles.line, global.bgWhiteSmoke]} />
+          <View style={[styles.line, global.bgMidGray]} />
           <View
             style={{
               flexDirection: "row",
@@ -590,25 +1271,43 @@ const Page = ({ route, navigation }) => {
               {/* <FontAwesome name="instagram" size={24} color="#1f1f1f" /> */}
               <Text
                 style={[
-                  { fontFamily: "thinItalic", fontSize: 15 },
-                  global.midGray,
+                  { fontFamily: "lightItalic", fontSize: 15 },
+                  global.black,
                 ]}
               >
                 Instagram
               </Text>
             </View>
             <View style={{ flexDirection: "row", alignItems: "center" }}>
-              <Text
+              <TextInput
+                onChangeText={(e) => setEditParams({ ...state, instagram: e })}
+                value={
+                  editParams?.instagram === null
+                    ? "Agregar Instagram"
+                    : editParams?.instagram
+                }
                 style={[
-                  { fontSize: 13, fontFamily: "lightItalic", marginRight: 5 },
+                  {
+                    fontSize: 13,
+                    fontFamily: "regular",
+                    padding: 10,
+                    borderColor: "#1f1f1f",
+                    borderWidth: 0.7,
+                    borderRadius: 4,
+                    textTransform: "capitalize",
+                  },
+                  editActive ? global.bgWhite : global.bgWhiteSoft,
                 ]}
-              >
-                Link
-              </Text>
-              <AntDesign name="link" size={16} color="#1f1f1f" />
+                editable={editActive ? true : false}
+                defaultValue={
+                  editParams?.instagram === null
+                    ? "Agregar Instagram"
+                    : editParams?.instagram
+                }
+              />
             </View>
           </View>
-          <View style={[styles.line, global.bgWhiteSmoke]} />
+          <View style={[styles.line, global.bgMidGray]} />
           <View
             style={{
               flexDirection: "row",
@@ -621,26 +1320,365 @@ const Page = ({ route, navigation }) => {
               {/* <FontAwesome name="facebook-square" size={24} color="#1f1f1f" /> */}
               <Text
                 style={[
-                  { fontFamily: "thinItalic", fontSize: 15 },
-                  global.midGray,
+                  { fontFamily: "lightItalic", fontSize: 15 },
+                  global.black,
                 ]}
               >
                 Facebook
               </Text>
             </View>
             <View style={{ flexDirection: "row", alignItems: "center" }}>
-              <Text
+              <TextInput
+                onChangeText={(e) => setEditParams({ ...state, facebook: e })}
+                value={
+                  editParams?.facebook === null
+                    ? "Agregar Facebook"
+                    : editParams?.facebook
+                }
                 style={[
-                  { fontSize: 13, fontFamily: "lightItalic", marginRight: 5 },
+                  {
+                    fontSize: 13,
+                    fontFamily: "regular",
+                    padding: 10,
+                    borderColor: "#1f1f1f",
+                    borderWidth: 0.7,
+                    borderRadius: 4,
+                    textTransform: "capitalize",
+                  },
+                  editActive ? global.bgWhite : global.bgWhiteSoft,
                 ]}
-              >
-                Link
-              </Text>
-              <AntDesign name="link" size={16} color="#1f1f1f" />
+                editable={editActive ? true : false}
+                defaultValue={
+                  editParams?.facebook === null
+                    ? "Agregar Facebook"
+                    : editParams?.facebook
+                }
+              />
             </View>
           </View>
-          <View style={[styles.line, global.bgWhiteSmoke]} />
+          <View style={[styles.line, global.bgMidGray]} />
+          {editActive && (
+            <CustomButton
+              text={
+                isLoading ? <ActivityIndicator color={`#1f1f1f`} /> : "Guardar"
+              }
+              handlePress={onSaveChange}
+              textStyles={[
+                global.black,
+                { fontFamily: "bold", marginLeft: 25 },
+              ]}
+              buttonStyles={[
+                {
+                  width: 200,
+                  height: 50,
+                  borderRadius: 6,
+                  flexDirection: "row",
+                  justifyContent: "center",
+                  alignItems: "center",
+                  borderColor: "#1f1f1f",
+                  borderWidth: 0.7,
+                  alignSelf: "center",
+                  marginTop: 15,
+                },
+                global.bgYellow,
+                ,
+              ]}
+            />
+          )}
         </View>
+        <Modal
+          animationType="none"
+          transparent={true}
+          visible={open}
+          onRequestClose={() => {
+            setOpen(!open);
+            setImageView(null);
+            setDescriptionImage("");
+          }}
+        >
+          <TouchableWithoutFeedback
+            onPress={() => {
+              setOpen(!open);
+              setImageView(null);
+              setDescriptionImage("");
+            }}
+          >
+            <View style={styles.modalContainer}>
+              <TouchableWithoutFeedback>
+                <View
+                  style={[
+                    styles.modalContent,
+                    {
+                      height: imageView?.url ? 520 : 450,
+                    },
+                  ]}
+                >
+                  <View style={styles.modalTop}>
+                    <Pressable
+                      onPress={() => {
+                        setOpen(!open);
+                        setImageView(null);
+                        setDescriptionImage("");
+                      }}
+                    >
+                      <Image
+                        style={{
+                          width: 35,
+                          height: 35,
+                          resizeMode: "contain",
+                        }}
+                        source={require("@/utils/images/arrow_back.png")}
+                      />
+                    </Pressable>
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <View>
+                      <Image
+                        style={{
+                          width: "100%",
+                          height: 230,
+                          resizeMode: "cover",
+                          borderRadius: 5,
+                          borderWidth: 0.7,
+                          borderColor: "#1f1f1f",
+                        }}
+                        source={{
+                          uri: imageChange
+                            ? imageChange.uri
+                            : imageView?.url
+                            ? imageView?.url
+                            : imageView?.uri,
+                        }}
+                      />
+                      <MaterialCommunityIcons
+                        name="image-edit-outline"
+                        size={24}
+                        color="#1f1f1f"
+                        style={{
+                          position: "absolute",
+                          backgroundColor: "#ffb703",
+                          borderRadius: 4,
+                          paddingHorizontal: 10,
+                          paddingVertical: 5,
+                          right: 0,
+                          opacity: 0.85,
+                          borderWidth: 0.7,
+                          borderColor: "#1f1f1f",
+                        }}
+                        onPress={changeTemporalImage}
+                      />
+                    </View>
+
+                    {imageView?.url && (
+                      <View style={{ flex: 1, paddingVertical: 15 }}>
+                        {imageView?.key === 0 && (
+                          <Text
+                            style={{
+                              fontFamily: "light",
+                              fontSize: 12,
+                              textAlign: "center",
+                            }}
+                          >
+                            Tu imagen principal solo la puedes cambiar
+                          </Text>
+                        )}
+                        <View
+                          style={{
+                            flex: 1,
+                            flexDirection: "row",
+                            borderColor: "#444",
+                            borderWidth: 0.4,
+                            paddingHorizontal: 10,
+                            borderRadius: 8,
+                            marginTop: 10,
+                          }}
+                        >
+                          <TextInput
+                            defaultValue={
+                              imageView?.key === 0
+                                ? item.description
+                                : imageView?.description
+                            }
+                            onChangeText={(e) => {
+                              setActiveMainImage(true);
+                              setDescriptionImage(e);
+                            }}
+                            placeholder={
+                              "Coloca una descripcion para tu imagen"
+                            }
+                            placeholderTextColor={"#333"}
+                            style={{
+                              flex: 1,
+                              // width: 100,
+                              fontFamily: "light",
+                              fontSize: 12,
+                              alignItems: "flex-start",
+                            }}
+                            multiline={true}
+                            numberOfLines={5}
+                          />
+                        </View>
+                        <View
+                          style={{
+                            flexDirection: "row",
+                            justifyContent: "space-between",
+                            columnGap: 5,
+                          }}
+                        >
+                          <TouchableOpacity
+                            style={[
+                              activeMainImage
+                                ? global.bgYellow
+                                : global.bgWhite,
+                              {
+                                borderRadius: 8,
+                                flex: 1,
+                                justifyContent: "center",
+                                alignItems: "center",
+                                height: 49,
+                                marginTop: 10,
+                                flexDirection: "row",
+                                borderWidth: 0.7,
+                                borderColor: "#1f1f1f",
+                              },
+                            ]}
+                            onPress={() =>
+                              changeImage(
+                                imageView,
+                                descriptionImage,
+                                imageChange
+                              )
+                            }
+                            disabled={!activeMainImage}
+                          >
+                            <Text
+                              style={[
+                                global.black,
+                                {
+                                  fontFamily: "medium",
+                                  fontSize: 14,
+                                  marginRight: 3,
+                                },
+                              ]}
+                            >
+                              {activeMainImage
+                                ? `Guardar cambios`
+                                : `Sin cambios`}
+                            </Text>
+                          </TouchableOpacity>
+                          {imageView?.key !== 0 && (
+                            <TouchableOpacity
+                              style={[
+                                {
+                                  flex: 1,
+                                  borderRadius: 8,
+                                  justifyContent: "center",
+                                  alignItems: "center",
+                                  height: 49,
+                                  marginTop: 10,
+                                  backgroundColor: "#c81d11",
+                                  flexDirection: "row",
+                                },
+                              ]}
+                              onPress={() => deleteImage(imageView)}
+                            >
+                              <Text
+                                style={[
+                                  global.white,
+                                  { fontFamily: "medium", fontSize: 14 },
+                                ]}
+                              >
+                                {`Eliminar`}
+                              </Text>
+                              <MaterialCommunityIcons
+                                name="delete-outline"
+                                size={24}
+                                color="white"
+                              />
+                            </TouchableOpacity>
+                          )}
+                        </View>
+                      </View>
+                    )}
+                    {imageView?.base64 && (
+                      <View
+                        style={{
+                          flexDirection: "row",
+                          justifyContent: "space-between",
+                          columnGap: 5,
+                        }}
+                      >
+                        <View
+                          style={{
+                            flex: 1,
+                            flexDirection: "row",
+                            borderColor: "#1f1f1f",
+                            borderWidth: 0.7,
+                            paddingHorizontal: 10,
+                            borderRadius: 8,
+                            marginTop: 10,
+                          }}
+                        >
+                          <TextInput
+                            value={descriptionImage}
+                            onChangeText={(e) => setDescriptionImage(e)}
+                            // onBlur={onBlur}
+                            placeholder={
+                              "Coloca una descripcion para tu imagen"
+                            }
+                            placeholderTextColor={"#333"}
+                            style={{
+                              flex: 1,
+                              // width: 100,
+                              fontFamily: "light",
+                              fontSize: 12,
+                              alignItems: "flex-start",
+                            }}
+                            multiline={true}
+                            numberOfLines={5}
+                          />
+                        </View>
+                        <TouchableOpacity
+                          style={[
+                            global.bgYellow,
+                            {
+                              borderRadius: 8,
+                              // flex: 1,
+                              justifyContent: "center",
+                              alignItems: "center",
+                              height: 70,
+                              marginTop: 10,
+                              flexDirection: "row",
+                              borderWidth: 0.7,
+                              borderColor: "#1f1f1f",
+                            },
+                          ]}
+                          onPress={() =>
+                            uploadImages(imageView?.base64, descriptionImage)
+                          }
+                        >
+                          <Text
+                            style={[
+                              global.black,
+                              {
+                                fontFamily: "medium",
+                                fontSize: 14,
+                                marginRight: 3,
+                                paddingHorizontal: 15,
+                              },
+                            ]}
+                          >
+                            {`Agregar`}
+                          </Text>
+                        </TouchableOpacity>
+                      </View>
+                    )}
+                  </View>
+                </View>
+              </TouchableWithoutFeedback>
+            </View>
+          </TouchableWithoutFeedback>
+        </Modal>
         <ModalAlert
           text={`Error al guardar imagenes. Por favor, selecciona un máximo de 4 imágenes`}
           close={() => setVisible(false)}
@@ -648,6 +1686,22 @@ const Page = ({ route, navigation }) => {
           open={visible}
         />
       </ScrollView>
+      {loading && (
+        <View
+          style={{
+            flex: 1,
+            justifyContent: "center",
+            alignItems: "center",
+            backgroundColor: "#000",
+            opacity: 0.5,
+            position: "absolute",
+            width: "100%",
+            height: "100%",
+          }}
+        >
+          <ActivityIndicator color={`#1f1f1f`} size={`large`} />
+        </View>
+      )}
     </View>
   );
 };

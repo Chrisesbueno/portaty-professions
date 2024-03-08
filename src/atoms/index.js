@@ -1,3 +1,4 @@
+import { MaterialIcons } from "@expo/vector-icons";
 import { atom } from "recoil";
 
 export const authSession = atom({
@@ -16,9 +17,49 @@ export const activitySelect = atom({
   key: "activitySelectValue",
   default: {},
 });
+export const areaSelect = atom({
+  key: "areaSelectValue",
+  default: {},
+});
+export const optionBussines = atom({
+  key: "optionBussinesValue",
+  default: {
+    name: "Servicio/s",
+    icon: <MaterialIcons name="home-repair-service" size={32} color="black" />,
+    id: 0,
+  },
+});
 export const mapBusiness = atom({
   key: "mapBusinessValue",
   default: {},
+});
+export const selectLocation = atom({
+  key: "selectLocationValue",
+  default: false,
+});
+export const emptyLocation = atom({
+  key: "emptyLocationValue",
+  default: true,
+});
+export const directionBusiness = atom({
+  key: "directionBusinessValue",
+  default: "",
+});
+export const directionBusinessOn = atom({
+  key: "directionBusinessOnValue",
+  default: {},
+});
+export const imageBusiness = atom({
+  key: "imageBusinessValue",
+  default: null,
+});
+export const blobBusiness = atom({
+  key: "blobBusinessValue",
+  default: null,
+});
+export const base64Business = atom({
+  key: "base64BusinessValue",
+  default: "",
 });
 export const userAuthenticated = atom({
   key: "userAuthenticatedValue",
@@ -86,4 +127,29 @@ export const urlInitalShare = atom({
 export const codeFields = atom({
   key: "codeFieldsValue",
   default: "",
+});
+
+export const updateListFavorites = atom({
+  key: "updateListFavoritesValue",
+  default: false,
+});
+
+export const updateProfile = atom({
+  key: "updateProfileValue",
+  default: false,
+});
+
+export const activeSearch = atom({
+  key: "activeSearchValue",
+  default: true,
+});
+
+export const textInputSearch = atom({
+  key: "textInputSearchValue",
+  default: "",
+});
+
+export const activeModalScreen = atom({
+  key: "activeModalScreenValue",
+  default: true,
 });

@@ -15,8 +15,8 @@ const CustomSelect = ({
           {icon.left && (
             <Image
               style={{
-                width: 30,
-                height: 30,
+                width: 28,
+                height: 28,
                 resizeMode: "contain",
                 alignSelf: "center",
               }}

@@ -7,13 +7,16 @@ import {
   TextInput,
   Share,
   Linking,
-  ActivityIndicator,
   Platform,
+  FlatList,
+  TouchableWithoutFeedback,
+  Modal,
+  Pressable,
 } from "react-native";
 import React, { useState, useEffect, useLayoutEffect } from "react";
 import * as customSearch from "@/graphql/CustomQueries/Search";
 import CustomSelect from "@/components/CustomSelect";
-import styles from "@/utils/styles/Unprofile.module.css";
+import styles from "@/utils/styles/SearchPost.module.css";
 import {
   FontAwesome5,
   MaterialCommunityIcons,
@@ -23,37 +26,79 @@ import {
   EvilIcons,
   Feather,
   Fontisto,
+  Entypo,
+  MaterialIcons,
 } from "@expo/vector-icons";
 import { Auth, API, Storage } from "aws-amplify";
 import * as queries from "@/graphql/CustomQueries/Favorites";
 import * as customFavorites from "@/graphql/CustomMutations/Favorites";
-import { useFocusEffect } from "@react-navigation/native";
-import CustomButton from "@/components/CustomButton";
+import * as subscriptions from "@/graphql/CustomSubscriptions/Search";
 import MapView, { Marker } from "react-native-maps";
 import SkeletonExample from "@/components/SkeletonExample";
-// import SkeletonPage from "@/components/SkeletonPage";
+// recoil
+import { useRecoilState, useRecoilValue } from "recoil";
+import { updateListFavorites, userAuthenticated } from "@/atoms/index";
+import * as FileSystem from "expo-file-system";
+import { StorageAccessFramework } from "expo-file-system";
+import { useRef } from "react";
+import ModalAlert from "@/components/ModalAlert";
 
 const SharePage = ({ route, navigation }) => {
+  const userAuth = useRecoilValue(userAuthenticated);
   const [post, setPost] = useState(null);
   const [save, setSave] = useState("");
+  const [open, setOpen] = useState(false);
+  const [numberFavorite, setNumberFavorite] = useState(0);
+  const [dimensionsImages, setDimensionsImages] = useState(0);
+  const [showAgg, setShowAgg] = useState(false);
+  const [visible, setVisible] = useState(false);
+  const [imageView, setImageView] = useState(null);
+  const [images, setImages] = useState([]);
+  const [listUpdate, setListUpdate] = useRecoilState(updateListFavorites);
   const global = require("@/utils/styles/global.js");
-  const { params } = route;
-  const { item, image } = route.params;
-  const [selectKey, setSelectKey] = useState("");
-  const [loading, setLoading] = useState(false);
+  const { item } = route.params;
+  console.log(item);
+  const getPdf = async () => {
+    const permissions =
+      await StorageAccessFramework.requestDirectoryPermissionsAsync();
+    if (!permissions.granted) {
+      return;
+    }
 
-  const getImage = async () => {
-    setLoading(true);
+    const api = "api-professions-gateway";
+    const path = "/documentqr";
+    const params = {
+      headers: {},
+      queryStringParameters: {
+        path: `https://www.portaty.com/share/business?id=${item.id}`,
+      },
+    };
+
     try {
-      await Storage.get(post?.image, {
-        level: "protected",
-        identityId: post?.identityID,
-      }).then((res) => setSelectKey(res));
-      setLoading(false);
+      const response = await API.get(api, path, params);
+      await StorageAccessFramework.createFileAsync(
+        permissions.directoryUri,
+        "qr.pdf",
+        "application/pdf"
+      )
+        .then(async (uri) => {
+          await FileSystem.writeAsStringAsync(uri, response["pdf_base64"], {
+            encoding: FileSystem.EncodingType.Base64,
+          });
+        })
+        .catch((e) => {
+          console.log(e);
+        });
     } catch (error) {
-      console.log("toy", error);
+      console.log("Error en pdf: ", error.message);
     }
   };
+
+  const onViewRef = useRef((viewableItems) => {
+    if (viewableItems.changed[0].isViewable)
+      setDimensionsImages(viewableItems.changed[0].item.key);
+  });
+  const viewConfigRef = useRef({ viewAreaCoveragePercentThreshold: 20 });
 
   const onCreateFavorite = async () => {
     try {
@@ -62,16 +107,18 @@ const SharePage = ({ route, navigation }) => {
         query: customFavorites.createFavorites,
         variables: {
           input: {
-            businessID: post.id,
+            businessID: post?.id,
             userID: attributes["custom:userTableID"],
             position: 0,
           },
         },
         authMode: "AMAZON_COGNITO_USER_POOLS",
       });
-      setSave(favorites.data.createFavorites.id);
+      setSave(favorites?.data?.createFavorites?.id);
+      setNumberFavorite(post?.favorites?.items?.length + 1);
+      setListUpdate(!listUpdate);
     } catch (error) {
-      console.log(error);
+      console.log("ERRO AL CARGAR UN FAVORITO: ", error);
     }
   };
 
@@ -86,6 +133,7 @@ const SharePage = ({ route, navigation }) => {
       authMode: "AMAZON_COGNITO_USER_POOLS",
     });
     setSave("");
+    setNumberFavorite(0);
   };
 
   const fetchData = async () => {
@@ -97,7 +145,20 @@ const SharePage = ({ route, navigation }) => {
         },
         authMode: "AWS_IAM",
       });
-      setPost(business.data.getBusiness);
+      if (
+        userAuth?.attributes["custom:userTableID"] ===
+        business?.data?.getBusiness?.userID
+      ) {
+        setShowAgg(false);
+      } else {
+        setShowAgg(true);
+      }
+      console.log("toy aqui", business?.data?.getBusiness);
+      
+      const list = business?.data?.getBusiness?.images.map((image) => JSON.parse(image)).sort((a, b) => a.key - b.key);
+    
+      setImages(list)
+      return setPost(business?.data?.getBusiness);
     } catch (error) {
       console.log(error);
     }
@@ -109,12 +170,12 @@ const SharePage = ({ route, navigation }) => {
         query: queries.favoritesByBusinessID,
         authMode: "AMAZON_COGNITO_USER_POOLS",
         variables: {
-          businessID: item ? item : params?.id,
+          businessID: item.id,
           userID: { eq: attributes["custom:userTableID"] },
         },
       });
-      if (favorite.data.favoritesByBusinessID.items.length !== 0)
-        setSave(favorite.data.favoritesByBusinessID.items[0].id);
+      if (favorite?.data?.favoritesByBusinessID?.items?.length !== 0)
+        setSave(favorite?.data?.favoritesByBusinessID?.items[0]?.id);
     } catch (error) {
       console.log(error);
     }
@@ -133,21 +194,22 @@ const SharePage = ({ route, navigation }) => {
   const onShare = async () => {
     try {
       await Share.share({
-        message: `Han compartido contigo un negocio, da click para mirarlo exp://192.168.250.1:19000/--/share/business?id=${params?.id}`,
+        message: `Han compartido contigo un negocio, da click para mirarlo https://www.portaty.com/share/business?id=${item.id}`,
       });
     } catch (error) {
       console.error("Error sharing:", error);
     }
   };
   const openCall = () => {
-    const url = `tel://${post.phone}`;
+    const url = `tel://${post?.phone}`;
     Linking.openURL(url);
   };
+
   useEffect(() => {
+    if (!save) fetchFavorite();
     fetchData();
-    fetchFavorite();
-    getImage(); 
   }, []);
+
   if (!post) return <SkeletonExample />;
   return (
     <View
@@ -163,85 +225,219 @@ const SharePage = ({ route, navigation }) => {
           style={[
             {
               flex: 1,
-              paddingHorizontal: 20,
               alignItems: "center",
               justifyContent: "center",
+              alignSelf: "center",
+              width: 320,
+              height: 250,
+              position: "relative",
             },
           ]}
         >
-          <View
-            style={{
-              width: 330,
-              height: 250,
-              borderRadius: 5,
-              borderColor: "#efeded",
-              borderWidth: 1,
-              overflow: "hidden",
-              padding: 10,
-              marginBottom: 20,
-              marginTop: 20,
-            }}
-          >
-            <Image
+          {images.length !== 1 &&
+            dimensionsImages + 1 > 1 &&
+            dimensionsImages <= 3 && (
+              <View
+                style={[
+                  global.mainBgColor,
+                  {
+                    width: 25,
+                    height: 25,
+                    position: "absolute",
+                    zIndex: 10,
+                    left: 0,
+                    top: "50%",
+                    opacity: 0.85,
+                    borderRadius: 5,
+                  },
+                ]}
+              >
+                <Entypo name="triangle-left" size={24} color="white" />
+              </View>
+            )}
+          {images.length !== 1 &&
+            dimensionsImages >= 0 &&
+            dimensionsImages < images.length - 1 && (
+              <View
+                style={[
+                  global.mainBgColor,
+                  {
+                    width: 25,
+                    height: 25,
+                    position: "absolute",
+                    zIndex: 10,
+                    top: "50%",
+                    right: 0,
+                    opacity: 0.85,
+                    borderRadius: 5,
+                  },
+                ]}
+              >
+                <Entypo name="triangle-right" size={24} color="white" />
+              </View>
+            )}
+          <FlatList
+            horizontal
+            data={images}
+            renderItem={({ item, index }) => (
+              <View
+                style={{
+                  flex: 1,
+                  width: 320,
+                  height: 250,
+                }}
+              >
+                <Image
+                  style={{
+                    width: "100%",
+                    height: "100%",
+                    resizeMode: "cover",
+                    borderRadius: 5,
+                    backgroundColor: "#fff",
+                    borderColor: "#1f1f1f",
+                    borderWidth: 0.7,
+                  }}
+                  source={{ uri: item.url }}
+                />
+                <TouchableOpacity
+                  style={[
+                    {
+                      flexDirection: "row",
+                      padding: 8,
+                      borderRadius: 5,
+                      opacity: 0.7,
+                      alignItems: "center",
+                      marginBottom: 5,
+                      position: "absolute",
+                      right: 0,
+                      borderColor: "#1f1f1f",
+                      borderWidth: 0.7,
+                    },
+                    global.bgYellow,
+                  ]}
+                  onPress={() => {
+                    setOpen(!open);
+                    setImageView(item);
+                  }}
+                >
+                  <Text
+                    style={[
+                      { fontFamily: "medium", fontSize: 15 },
+                      global.black,
+                    ]}
+                  >
+                    {item.key + 1}/{images.length}
+                  </Text>
+                  <MaterialCommunityIcons
+                    name="image-search-outline"
+                    size={18}
+                    color="#1f1f1f"
+                    style={{ marginLeft: 5 }}
+                  />
+                </TouchableOpacity>
+              </View>
+            )}
+            keyExtractor={(item, index) => index}
+            viewabilityConfig={viewConfigRef.current}
+            onViewableItemsChanged={onViewRef.current}
+          />
+        </View>
+        {showAgg && (
+          <View>
+            <View
               style={{
-                width: "100%",
-                height: "100%",
-                resizeMode: "cover",
-                borderRadius: 2,
+                // flex: 1,
+                flexDirection: "row",
+                alignItems: "center",
+                justifyContent: "space-between",
+                padding: 20,
+                paddingHorizontal: 100,
               }}
-              source={{ uri: selectKey }}
-            />
-          </View>
-          {/* <View>
-          <Fontisto name="heart" size={23} color="#e31b23" />
-          <Text>Agregado a favoritos</Text>
-
-          </View> */}
-        </View>
-        <View
-          style={{
-            // flex: 1,
-            flexDirection: "row",
-            alignItems: "center",
-            justifyContent: "space-between",
-            padding: 20,
-          }}
-        >
-          <View
-            style={{
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-          >
-            <Text style={{ fontSize: 26, fontFamily: "thin" }}>
-              {post?.favorites?.items.length}
-            </Text>
-            <Text style={{ fontSize: 22, fontFamily: "thin" }}>Favoritos</Text>
-          </View>
-          <TouchableOpacity
-            style={[
-              save === "" ? global.mainBgColor : global.bgWhiteSmoke,
-              { padding: 10, borderRadius: 8 },
-            ]}
-            onPress={() => {
-              if (save === "") {
-                onCreateFavorite();
-              } else {
-                onDeleteFavorite();
-              }
-            }}
-          >
-            <Text
-              style={[
-                { fontSize: 14, fontFamily: "thin" },
-                save === "" ? global.white : global.black,
-              ]}
             >
-              {save === "" ? "Agregar a favoritos" : "Eliminar de favoritos"}
-            </Text>
-          </TouchableOpacity>
-        </View>
-        <View style={[styles.line, global.bgWhiteSmoke]} />
+              <View
+                style={{
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <Text style={{ fontSize: 24, fontFamily: "medium" }}>
+                  {numberFavorite
+                    ? numberFavorite
+                    : post?.favorites?.items?.length}
+                </Text>
+                <Text style={{ fontSize: 20, fontFamily: "light" }}>
+                  Favoritos
+                </Text>
+              </View>
+              <TouchableOpacity
+                onPress={() => {
+                  if (save === "") {
+                    onCreateFavorite();
+                  } else {
+                    onDeleteFavorite();
+                  }
+                }}
+              >
+                {save === "" ? (
+                  <Image
+                    style={{
+                      width: 45,
+                      height: 45,
+                      resizeMode: "cover",
+                    }}
+                    source={require("@/utils/images/nofavorites.png")}
+                  />
+                ) : (
+                  <Image
+                    style={{
+                      width: 45,
+                      height: 45,
+                      resizeMode: "cover",
+                    }}
+                    source={require("@/utils/images/sifavorites.png")}
+                  />
+                )}
+              </TouchableOpacity>
+            </View>
+            <TouchableOpacity
+              style={{
+                alignSelf: "flex-end",
+                paddingHorizontal: 20,
+                paddingBottom: 5,
+                flexDirection: "row",
+                alignItems: "center",
+              }}
+              onPress={() => setVisible(true)}
+            >
+              <MaterialIcons name="report" size={22} color="black" />
+              <Text
+                style={[
+                  global.black,
+                  {
+                    fontFamily: "bold",
+                    fontSize: 12,
+                    // marginLeft: 2,
+                    // marginBottom: 3
+                  },
+                ]}
+              >
+                Reportar negocio
+              </Text>
+            </TouchableOpacity>
+          </View>
+        )}
+        <View
+          style={[
+            styles.line,
+            global.bgMidGray,
+            {
+              top: 10,
+              left: 0,
+              width: 500,
+              marginBottom: 20,
+            },
+          ]}
+        />
 
         <TouchableOpacity
           style={{
@@ -250,8 +446,13 @@ const SharePage = ({ route, navigation }) => {
             justifyContent: "space-between",
             alignItems: "center",
           }}
+          activeOpacity={1}
           onPress={() =>
-            onOpenMap(post.coordinates.lat, post.coordinates.lon, post.name)
+            onOpenMap(
+              post?.coordinates?.lat,
+              post?.coordinates?.lon,
+              post?.name
+            )
           }
         >
           <View
@@ -260,6 +461,8 @@ const SharePage = ({ route, navigation }) => {
               borderRadius: 10,
               overflow: "hidden",
               marginBottom: 40,
+              borderColor: "#1f1f1f",
+              borderWidth: 0.7,
             }}
           >
             <MapView
@@ -268,18 +471,19 @@ const SharePage = ({ route, navigation }) => {
                 height: 220,
               }}
               initialRegion={{
-                latitude: post.coordinates.lat,
-                longitude: post.coordinates.lon,
+                latitude: post?.coordinates?.lat,
+                longitude: post?.coordinates?.lon,
                 latitudeDelta: 0.001,
                 longitudeDelta: 0.001,
               }}
+              scrollEnabled={false}
             >
               <Marker
                 coordinate={{
-                  latitude: post.coordinates.lat,
-                  longitude: post.coordinates.lon,
+                  latitude: post?.coordinates?.lat,
+                  longitude: post?.coordinates?.lon,
                 }}
-                title={post.name}
+                title={post?.name}
               />
             </MapView>
           </View>
@@ -291,6 +495,7 @@ const SharePage = ({ route, navigation }) => {
             flexDirection: "row",
             justifyContent: "space-between",
             alignItems: "center",
+            marginTop: -50,
           }}
           onPress={onShare}
         >
@@ -303,17 +508,19 @@ const SharePage = ({ route, navigation }) => {
                   borderRadius: 10,
                   alignItems: "center",
                   justifyContent: "center",
+                  borderColor: "#1f1f1f",
+                  borderWidth: 0.7,
                 },
-                global.mainBgColor,
+                global.bgYellow,
               ]}
             >
-              <EvilIcons name="share-google" size={25} color="white" />
+              <EvilIcons name="share-google" size={32} color="#1f1f1f" />
             </View>
             <View style={{ marginLeft: 10 }}>
-              <Text style={{ fontFamily: "light", fontSize: 16 }}>
+              <Text style={{ fontFamily: "medium", fontSize: 16 }}>
                 Compartir
               </Text>
-              <Text style={{ fontFamily: "thin", fontSize: 12, width: 150 }}>
+              <Text style={{ fontFamily: "light", fontSize: 12, width: 150 }}>
                 Compartelo con tus amigos y familiares
               </Text>
             </View>
@@ -327,20 +534,15 @@ const SharePage = ({ route, navigation }) => {
             source={require("@/utils/images/arrow_right.png")}
           />
         </TouchableOpacity>
-        <TouchableOpacity
+        {/* <TouchableOpacity
           style={{
             padding: 20,
             flexDirection: "row",
             justifyContent: "space-between",
             alignItems: "center",
-            marginTop: -27,
+            marginTop: -25,
           }}
-          onPress={() => {
-            navigation.navigate("ViewQR", {
-              id: `https://www.portaty.com/share/business?id=${post?.id}`,
-              name: post?.name,
-            });
-          }}
+          onPress={getPdf}
         >
           <View style={{ flexDirection: "row", alignItems: "center" }}>
             <View
@@ -351,20 +553,20 @@ const SharePage = ({ route, navigation }) => {
                   borderRadius: 10,
                   alignItems: "center",
                   justifyContent: "center",
+                  borderColor: "#1f1f1f",
+                  borderWidth: 0.7,
                 },
-                global.mainBgColor,
+                global.bgYellow,
               ]}
             >
-              <MaterialCommunityIcons
-                name="qrcode-scan"
-                size={25}
-                color="white"
-              />
+              <AntDesign name="qrcode" size={24} color="#1f1f1f" />
             </View>
             <View style={{ marginLeft: 10 }}>
-              <Text style={{ fontFamily: "light", fontSize: 16 }}>Ver QR</Text>
-              <Text style={{ fontFamily: "thin", fontSize: 12, width: 150 }}>
-                Compartelo en formato QR para pegarlo en donde quieras
+              <Text style={{ fontFamily: "medium", fontSize: 15 }}>
+                Descargar QR
+              </Text>
+              <Text style={{ fontFamily: "light", fontSize: 12, width: 150 }}>
+                Descarga el QR del negocio para pegarlo en donde quieras
               </Text>
             </View>
           </View>
@@ -376,7 +578,7 @@ const SharePage = ({ route, navigation }) => {
             }}
             source={require("@/utils/images/arrow_right.png")}
           />
-        </TouchableOpacity>
+        </TouchableOpacity> */}
         <TouchableOpacity
           style={{
             padding: 20,
@@ -396,15 +598,17 @@ const SharePage = ({ route, navigation }) => {
                   borderRadius: 10,
                   alignItems: "center",
                   justifyContent: "center",
+                  borderColor: "#1f1f1f",
+                  borderWidth: 0.7,
                 },
-                global.mainBgColor,
+                global.bgYellow,
               ]}
             >
-              <Feather name="phone-call" size={17} color="white" />
+              <Feather name="phone-call" size={20} color="#1f1f1f" />
             </View>
             <View style={{ marginLeft: 10 }}>
-              <Text style={{ fontFamily: "light", fontSize: 16 }}>Llamar</Text>
-              <Text style={{ fontFamily: "thin", fontSize: 12, width: 150 }}>
+              <Text style={{ fontFamily: "medium", fontSize: 15 }}>Llamar</Text>
+              <Text style={{ fontFamily: "light", fontSize: 12, width: 150 }}>
                 Contacta al negocio directamente
               </Text>
             </View>
@@ -419,10 +623,19 @@ const SharePage = ({ route, navigation }) => {
           />
         </TouchableOpacity>
         <View style={{ marginBottom: 80 }}>
-          <Text style={{ fontSize: 22, fontFamily: "thinItalic", padding: 10 }}>
+          <Text style={{ fontSize: 22, fontFamily: "regular", padding: 10 }}>
             Datos
           </Text>
-          <View style={[styles.line, global.bgWhiteSmoke]} />
+          <View
+            style={[
+              styles.line,
+              global.bgMidGray,
+              {
+                width: 500,
+                left: 0,
+              },
+            ]}
+          />
           <View
             style={{
               flexDirection: "row",
@@ -435,20 +648,29 @@ const SharePage = ({ route, navigation }) => {
               {/* <Foundation name="torso-business" size={22} color="#1f1f1f" /> */}
               <Text
                 style={[
-                  { fontFamily: "thinItalic", fontSize: 15 },
-                  global.midGray,
+                  { fontFamily: "lightItalic", fontSize: 13 },
+                  global.black,
                 ]}
               >
                 Razon social
               </Text>
             </View>
             <View style={{ flexDirection: "row", alignItems: "center" }}>
-              <Text style={[{ fontSize: 13, fontFamily: "lightItalic" }]}>
+              <Text style={[{ fontSize: 13, fontFamily: "regular" }]}>
                 {post?.name}
               </Text>
             </View>
           </View>
-          <View style={[styles.line, global.bgWhiteSmoke]} />
+          <View
+            style={[
+              styles.line,
+              global.bgMidGray,
+              {
+                width: 500,
+                left: 0,
+              },
+            ]}
+          />
           <View
             style={{
               flexDirection: "row",
@@ -461,20 +683,37 @@ const SharePage = ({ route, navigation }) => {
               {/* <FontAwesome5 name="store" size={16} color="#1f1f1f" /> */}
               <Text
                 style={[
-                  { fontFamily: "thinItalic", fontSize: 15 },
-                  global.midGray,
+                  { fontFamily: "lightItalic", fontSize: 13 },
+                  global.black,
                 ]}
               >
                 Actividad laboral
               </Text>
             </View>
             <View style={{ flexDirection: "row", alignItems: "center" }}>
-              <Text style={[{ fontSize: 13, fontFamily: "lightItalic" }]}>
+              <Text
+                style={[
+                  {
+                    fontSize: 13,
+                    fontFamily: "regular",
+                    textTransform: "capitalize",
+                  },
+                ]}
+              >
                 {post?.activity}
               </Text>
             </View>
           </View>
-          <View style={[styles.line, global.bgWhiteSmoke]} />
+          <View
+            style={[
+              styles.line,
+              global.bgMidGray,
+              {
+                width: 500,
+                left: 0,
+              },
+            ]}
+          />
           <View
             style={{
               flexDirection: "row",
@@ -487,20 +726,20 @@ const SharePage = ({ route, navigation }) => {
               {/* <FontAwesome name="phone" size={20} color="#1f1f1f" /> */}
               <Text
                 style={[
-                  { fontFamily: "thinItalic", fontSize: 15 },
-                  global.midGray,
+                  { fontFamily: "lightItalic", fontSize: 13 },
+                  global.black,
                 ]}
               >
                 Telefono
               </Text>
             </View>
             <View style={{ flexDirection: "row", alignItems: "center" }}>
-              <Text style={[{ fontSize: 13, fontFamily: "lightItalic" }]}>
+              <Text style={[{ fontSize: 13, fontFamily: "regular" }]}>
                 {post?.phone}
               </Text>
             </View>
           </View>
-          <View style={[styles.line, global.bgWhiteSmoke]} />
+          <View style={[styles.line, global.bgMidGray]} />
           <View
             style={{
               flexDirection: "row",
@@ -513,20 +752,20 @@ const SharePage = ({ route, navigation }) => {
               {/* <FontAwesome name="whatsapp" size={22} color="#1f1f1f" /> */}
               <Text
                 style={[
-                  { fontFamily: "thinItalic", fontSize: 15 },
-                  global.midGray,
+                  { fontFamily: "lightItalic", fontSize: 13 },
+                  global.black,
                 ]}
               >
                 WhatsApp
               </Text>
             </View>
             <View style={{ flexDirection: "row", alignItems: "center" }}>
-              <Text style={[{ fontSize: 13, fontFamily: "lightItalic" }]}>
+              <Text style={[{ fontSize: 13, fontFamily: "regular" }]}>
                 {post?.whatsapp}
               </Text>
             </View>
           </View>
-          <View style={[styles.line, global.bgWhiteSmoke]} />
+          <View style={[styles.line, global.bgMidGray]} />
           <View
             style={{
               flexDirection: "row",
@@ -543,20 +782,20 @@ const SharePage = ({ route, navigation }) => {
               /> */}
               <Text
                 style={[
-                  { fontFamily: "thinItalic", fontSize: 15 },
-                  global.midGray,
+                  { fontFamily: "lightItalic", fontSize: 13 },
+                  global.black,
                 ]}
               >
                 Correo
               </Text>
             </View>
             <View style={{ flexDirection: "row", alignItems: "center" }}>
-              <Text style={[{ fontSize: 13, fontFamily: "lightItalic" }]}>
+              <Text style={[{ fontSize: 13, fontFamily: "regular" }]}>
                 {post?.email}
               </Text>
             </View>
           </View>
-          <View style={[styles.line, global.bgWhiteSmoke]} />
+          <View style={[styles.line, global.bgMidGray]} />
           <View
             style={{
               flexDirection: "row",
@@ -569,8 +808,8 @@ const SharePage = ({ route, navigation }) => {
               {/* <MaterialCommunityIcons name="web" size={24} color="#1f1f1f" /> */}
               <Text
                 style={[
-                  { fontFamily: "thinItalic", fontSize: 15 },
-                  global.midGray,
+                  { fontFamily: "lightItalic", fontSize: 13 },
+                  global.black,
                 ]}
               >
                 Web
@@ -579,7 +818,7 @@ const SharePage = ({ route, navigation }) => {
             <View style={{ flexDirection: "row", alignItems: "center" }}>
               <Text
                 style={[
-                  { fontSize: 13, fontFamily: "lightItalic", marginRight: 5 },
+                  { fontSize: 13, fontFamily: "regular", marginRight: 5 },
                 ]}
               >
                 Link
@@ -587,7 +826,7 @@ const SharePage = ({ route, navigation }) => {
               <AntDesign name="link" size={16} color="#1f1f1f" />
             </View>
           </View>
-          <View style={[styles.line, global.bgWhiteSmoke]} />
+          <View style={[styles.line, global.bgMidGray]} />
           <View
             style={{
               flexDirection: "row",
@@ -600,8 +839,8 @@ const SharePage = ({ route, navigation }) => {
               {/* <FontAwesome name="instagram" size={24} color="#1f1f1f" /> */}
               <Text
                 style={[
-                  { fontFamily: "thinItalic", fontSize: 15 },
-                  global.midGray,
+                  { fontFamily: "lightItalic", fontSize: 13 },
+                  global.black,
                 ]}
               >
                 Instagram
@@ -610,7 +849,7 @@ const SharePage = ({ route, navigation }) => {
             <View style={{ flexDirection: "row", alignItems: "center" }}>
               <Text
                 style={[
-                  { fontSize: 13, fontFamily: "lightItalic", marginRight: 5 },
+                  { fontSize: 13, fontFamily: "regular", marginRight: 5 },
                 ]}
               >
                 Link
@@ -618,7 +857,7 @@ const SharePage = ({ route, navigation }) => {
               <AntDesign name="link" size={16} color="#1f1f1f" />
             </View>
           </View>
-          <View style={[styles.line, global.bgWhiteSmoke]} />
+          <View style={[styles.line, global.bgMidGray]} />
           <View
             style={{
               flexDirection: "row",
@@ -631,8 +870,8 @@ const SharePage = ({ route, navigation }) => {
               {/* <FontAwesome name="facebook-square" size={24} color="#1f1f1f" /> */}
               <Text
                 style={[
-                  { fontFamily: "thinItalic", fontSize: 15 },
-                  global.midGray,
+                  { fontFamily: "lightItalic", fontSize: 13 },
+                  global.black,
                 ]}
               >
                 Facebook
@@ -641,7 +880,7 @@ const SharePage = ({ route, navigation }) => {
             <View style={{ flexDirection: "row", alignItems: "center" }}>
               <Text
                 style={[
-                  { fontSize: 13, fontFamily: "lightItalic", marginRight: 5 },
+                  { fontSize: 13, fontFamily: "regular", marginRight: 5 },
                 ]}
               >
                 Link
@@ -649,38 +888,106 @@ const SharePage = ({ route, navigation }) => {
               <AntDesign name="link" size={16} color="#1f1f1f" />
             </View>
           </View>
-          <View style={[styles.line, global.bgWhiteSmoke]} />
+          <View style={[styles.line, global.bgMidGray]} />
+          <Modal
+            animationType="none"
+            transparent={true}
+            visible={open}
+            onRequestClose={() => {
+              setOpen(!open);
+              setImageView(null);
+            }}
+          >
+            <TouchableWithoutFeedback
+              onPress={() => {
+                setOpen(!open);
+                setImageView(null);
+              }}
+            >
+              <View style={styles.modalContainer}>
+                <TouchableWithoutFeedback>
+                  <View style={[styles.modalContent]}>
+                    <View style={styles.modalTop}>
+                      <Pressable
+                        onPress={() => {
+                          setOpen(!open);
+                          setImageView(null);
+                        }}
+                      >
+                        <Image
+                          style={{
+                            width: 35,
+                            height: 35,
+                            resizeMode: "contain",
+                          }}
+                          source={require("@/utils/images/arrow_back.png")}
+                        />
+                      </Pressable>
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Image
+                        style={{
+                          width: "100%",
+                          height: "60%",
+                          resizeMode: "cover",
+                          borderRadius: 5,
+                          borderWidth: 0.7,
+                          borderColor: "#1f1f1f",
+                        }}
+                        source={{
+                          uri: imageView?.url ? imageView?.url : imageView?.uri,
+                        }}
+                      />
+                      {imageView?.url && (
+                        <View style={{ flex: 1, paddingVertical: 15 }}>
+                          <View
+                            style={{
+                              flex: 1,
+                              flexDirection: "row",
+                              borderColor: "#1f1f1f",
+                              borderWidth: 0.7,
+                              paddingHorizontal: 10,
+                              borderRadius: 8,
+                              marginTop: 10,
+                            }}
+                          >
+                            <TextInput
+                              value={
+                                imageView.key === 0
+                                  ? post.description
+                                  : imageView?.description
+                              }
+                              editable={false}
+                              style={{
+                                flex: 1,
+                                // width: 100,
+                                fontFamily: "regular",
+                                fontSize: 14,
+                                alignItems: "flex-start",
+                                color: "#000",
+                              }}
+                              multiline={true}
+                              numberOfLines={5}
+                            />
+                          </View>
+                        </View>
+                      )}
+                    </View>
+                  </View>
+                </TouchableWithoutFeedback>
+              </View>
+            </TouchableWithoutFeedback>
+          </Modal>
         </View>
+        <ModalAlert
+          text={`Seguro quieres reportar este negocio?`}
+          close={() => setVisible(false)}
+          open={visible}
+          icon={require("@/utils/images/error.png")}
+        />
       </ScrollView>
     </View>
   );
-
-  if (params?.id === undefined || item === undefined)
-    return (
-      <View
-        style={[
-          {
-            flex: 1,
-            alignItems: "center",
-            justifyContent: "center",
-            paddingHorizontal: 20,
-            paddingBottom: 80,
-          },
-          global.bgWhite,
-        ]}
-      >
-        <Text
-          style={{ fontSize: 20, fontFamily: "light", textAlign: "center" }}
-        >
-          No se encuentra el negocio al cual quieres acceder
-        </Text>
-        <CustomButton
-          text={`Encuentra mas negocios`}
-          handlePress={() => navigation.navigate("Tabs_Navigation")}
-          textStyles={[styles.textSearch, global.white]}
-          buttonStyles={[styles.search, global.mainBgColor]}
-        />
-      </View>
-    );
 };
+
 export default SharePage;
