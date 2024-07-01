@@ -97,7 +97,6 @@ export const updateBusinessPage = /* GraphQL */ `
       instagram
       facebook
       page
-      activity
       description
     }
   }

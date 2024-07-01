@@ -111,7 +111,7 @@ const Page = ({ route, navigation }) => {
   };
   const onSaveChange = async () => {
     setIsLoading(true);
-    const activityChange = JSON.stringify(editParams?.activity);
+    // const activityChange = JSON.stringify(editParams?.activity);
     try {
       const result = await API.graphql({
         query: mutations.updateBusinessPage,
@@ -126,7 +126,7 @@ const Page = ({ route, navigation }) => {
             instagram: editParams?.instagram,
             facebook: editParams?.facebook,
             page: editParams?.web,
-            activity: activityChange,
+            // activity: activityChange,
             description: editParams?.description,
           },
         },
@@ -1013,12 +1013,12 @@ const Page = ({ route, navigation }) => {
             </View>
             <View style={{ flexDirection: "row", alignItems: "center" }}>
               <TextInput
-                onChangeText={(e) =>
-                  setEditParams((prevState) => ({
-                    ...prevState,
-                    activity: { ...prevState, main: e },
-                  }))
-                }
+                // onChangeText={(e) =>
+                //   setEditParams((prevState) => ({
+                //     ...prevState,
+                //     activity: { ...prevState, main: e },
+                //   }))
+                // }
                 value={editParams?.activity?.main}
                 style={[
                   {
@@ -1030,10 +1030,10 @@ const Page = ({ route, navigation }) => {
                     borderRadius: 4,
                     // textTransform: "capitalize",
                   },
-                  editActive ? global.bgWhite : global.bgWhiteSoft,
+                  global.bgWhiteSoft,
                 ]}
                 // defaultValue={item.name}
-                editable={editActive ? true : false}
+                editable={false}
               />
               {/* <Text style={[{ fontSize: 13, fontFamily: "regular" }]}>
                 {item.activity}
@@ -1062,12 +1062,12 @@ const Page = ({ route, navigation }) => {
             </View>
             <View style={{ flexDirection: "row", alignItems: "center" }}>
               <TextInput
-                onChangeText={(e) =>
-                  setEditParams((prevState) => ({
-                    ...prevState,
-                    activity: { ...prevState, sub: e },
-                  }))
-                }
+                // onChangeText={(e) =>
+                //   setEditParams((prevState) => ({
+                //     ...prevState,
+                //     activity: { ...prevState, sub: e },
+                //   }))
+                // }
                 value={editParams?.activity?.sub}
                 style={[
                   {
@@ -1079,10 +1079,10 @@ const Page = ({ route, navigation }) => {
                     borderRadius: 4,
                     // textTransform: "capitalize",
                   },
-                  editActive ? global.bgWhite : global.bgWhiteSoft,
+                  global.bgWhiteSoft,
                 ]}
                 // defaultValue={item.name}
-                editable={editActive ? true : false}
+                editable={false}
               />
               {/* <Text style={[{ fontSize: 13, fontFamily: "regular" }]}>
                 {item.activity}
