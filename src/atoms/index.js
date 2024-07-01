@@ -166,3 +166,8 @@ export const notificationToken = atom({
   key: "notificationTokenValue",
   default: null,
 });
+
+export const connectionStatus = atom({
+  key: "connectionStatusValue",
+  default: null,
+});

@@ -78,7 +78,7 @@
 }
 .textTag {
   font-size: 12px;
-  font-family: 'thin';
+  font-family: "thin";
 }
 
 .textInput {
@@ -115,7 +115,7 @@
 }
 .titleTag {
   margin-top: -12px;
-  font-family: 'light';
+  font-family: "light";
   margin-bottom: 12px;
   font-size: 12px;
 }
@@ -157,4 +157,20 @@
   font-size: 14px;
   color: #8c9199;
   /* text-transform: capitalize; */
+}
+.search {
+  /* flex: 1; */
+  margin-top: 20px;
+  text-align: center;
+  width: 200px;
+  padding: 20px;
+  height: 60px;
+  border-radius: 8px;
+  border: 0.7px solid #1f1f1f;
+}
+
+.textSearch {
+  text-align: center;
+  font-family: "bold";
+  font-size: 15px;
 }
