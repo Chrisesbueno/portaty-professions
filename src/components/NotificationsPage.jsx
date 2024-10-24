@@ -44,7 +44,6 @@ const NotificationsPage = () => {
           id: user.attributes["custom:userTableID"],
         },
       });
-      console.log("aqui", response.data.listUserNotifications.items[0].type);
 
       setNotificationAll(response.data.listUserNotifications.items);
       if (response.data.listUserNotifications.items.length !== 0)
